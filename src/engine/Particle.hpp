@@ -6,8 +6,8 @@ struct Particle {
   sf::Vector2f position;
   sf::Vector2f velocity;
   sf::Vector2f acceleration;
-  float mass = 1e10;
-  int index;
+  uint32_t index;
+  float mass = 1e10f;
 
   void update() {
     velocity += acceleration;

@@ -5,9 +5,9 @@
 
 class ParticleSystem : public sf::Drawable, public sf::Transformable {
   std::vector<Particle> particles;
-  Rectangle<int>* initBoundary;
-  QuadTree<int>* qt;
   sf::VertexArray vertices;
+  Rectangle<uint32_t>* initBoundary = nullptr;
+  QuadTree<uint32_t>* qt = nullptr;
   bool showGrid = false;
 
   virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const {
@@ -21,23 +21,23 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
 
   void updateQuadTree() {
     delete qt;
-    qt = new QuadTree<int>(*initBoundary, 40);
+    qt = new QuadTree<uint32_t>(*initBoundary);
 
     for (const Particle& particle : particles) {
       const sf::Vector2f& pos = particle.position;
-      qt->insert(Point<int>{pos.x, pos.y, &particle.index});
+      qt->insert(Point<uint32_t>{pos.x, pos.y, &particle.index});
     }
   }
 
   void updateAttraction() {
     for (Particle& p1 : particles) {
       const sf::Vector2f& pos = p1.position;
-      Rectangle<int> range{pos.x, pos.y, 200.f, 200.f};
+      Rectangle<uint32_t> range{pos.x, pos.y, 200.f, 200.f};
 
-      std::vector<Point<int>> found;
+      std::vector<Point<uint32_t>> found;
       qt->query(found, range);
 
-      for (const Point<int>& point : found) {
+      for (const Point<uint32_t>& point : found) {
         Particle& p2 = particles[*point.data];
         if (&p1 != &p2)
           p1.attract(p2);
@@ -59,18 +59,18 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
 
     for (int x = 0; x < WIDTH / cellSize; x++) {
       for (int y = 0; y < HEIGHT / cellSize; y++) {
-        Rectangle<int> range{x * cellSize + cellWidth, y * cellSize + cellHeight, cellWidth, cellHeight};
-        std::vector<Point<int>> found;
+        Rectangle<uint32_t> range{x * cellSize + cellWidth, y * cellSize + cellHeight, cellWidth, cellHeight};
+        std::vector<Point<uint32_t>> found;
         qt->query(found, range);
 
-        for (Point<int>& p : found)
+        for (Point<uint32_t>& p : found)
           vertices[*p.data].color = colormap[found.size() / particles.size() * (colormap.size() - 1)];
       }
     }
   }
 
   public:
-    ParticleSystem(unsigned int count) : particles(count), vertices(sf::Points, count) {
+    ParticleSystem(uint32_t count) : particles(count), vertices(sf::Points, count) {
       // Setup particles
       for (int i = 0; i < count; i++) {
         sf::Vector2f pos = {random(0.f, WIDTH * 1.f), random(0.f, HEIGHT * 1.f)};
@@ -80,8 +80,8 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
       }
 
       // Setup quad tree
-      initBoundary = new Rectangle<int>{WIDTH / 2.f, HEIGHT / 2.f, WIDTH / 2.f, HEIGHT / 2.f};
-      qt = new QuadTree<int>(*initBoundary, 4);
+      initBoundary = new Rectangle<uint32_t>{WIDTH / 2.f, HEIGHT / 2.f, WIDTH / 2.f, HEIGHT / 2.f};
+      qt = new QuadTree<uint32_t>(*initBoundary);
     }
 
     ~ParticleSystem() {

@@ -1,5 +1,5 @@
 #include "../pch.h"
-#include <stdexcept>
+#include "../preferences.h"
 #include <vector>
 
 template<class T>
@@ -41,9 +41,8 @@ template<class T>
 class QuadTree {
   Rectangle<T> boundary;
   std::vector<Point<T>> points;
-  int capacity;
   bool divided = false;
-  sf::Color color = sf::Color(20, 20, 20);
+  sf::Color color = sf::Color(30, 30, 30);
 
   QuadTree* northWest = nullptr;
   QuadTree* northEast = nullptr;
@@ -64,41 +63,29 @@ class QuadTree {
     Rectangle<T> swRect{x - w / 2, y + h / 2, w / 2, h / 2};
     Rectangle<T> seRect{x + w / 2, y + h / 2, w / 2, h / 2};
 
-    northWest = new QuadTree(nwRect, capacity);
-    northEast = new QuadTree(neRect, capacity);
-    southWest = new QuadTree(swRect, capacity);
-    southEast = new QuadTree(seRect, capacity);
+    northWest = new QuadTree(nwRect);
+    northEast = new QuadTree(neRect);
+    southWest = new QuadTree(swRect);
+    southEast = new QuadTree(seRect);
   }
 
-  void clear() {
-    if (divided) {
-      northWest->clear();
-      northEast->clear();
-      southWest->clear();
-      southEast->clear();
-    } else {
+  public:
+    QuadTree(Rectangle<T> boundary)
+      : boundary(boundary) {
+        points.reserve(QUAD_TREE_CAPACITY);
+    }
+
+    ~QuadTree() {
       delete northWest;
       delete northEast;
       delete southWest;
       delete southEast;
     }
-  }
-
-  public:
-
-    QuadTree(Rectangle<T> boundary, int capacity)
-      : boundary(boundary), capacity(capacity) {
-        points.reserve(capacity);
-    }
-
-    ~QuadTree() {
-      clear();
-    }
 
     bool insert(Point<T> p) {
       if (!boundary.contains(p)) return false;
 
-      if (points.size() < capacity) {
+      if (points.size() < QUAD_TREE_CAPACITY) {
         points.push_back(p);
         return true;
       } else {
