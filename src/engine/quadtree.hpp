@@ -28,11 +28,11 @@ struct Rectangle {
   }
 
   bool intersects(const Rectangle& r) const {
-    return (
-      top    < r.bottom ||
+    return !(
+      top    > r.bottom ||
       right  < r.left   ||
       left   > r.right  ||
-      bottom > r.top
+      bottom < r.top
     );
   }
 };
@@ -42,7 +42,11 @@ class QuadTree {
   Rectangle<T> boundary;
   std::vector<Point<T>> points;
   bool divided = false;
+  uint16_t mass = 0;
+
   sf::Color color = sf::Color(30, 30, 30);
+  sf::Font massFont;
+  sf::Text massText;
 
   QuadTree* northWest = nullptr;
   QuadTree* northEast = nullptr;
@@ -67,12 +71,29 @@ class QuadTree {
     northEast = new QuadTree(neRect);
     southWest = new QuadTree(swRect);
     southEast = new QuadTree(seRect);
+
+    for (const Point<T>& p : points) {
+      northWest->insert(p) ||
+      northEast->insert(p) ||
+      southWest->insert(p) ||
+      southEast->insert(p);
+    }
+
+    points.clear();
+    points.reserve(0);
   }
 
   public:
     QuadTree(Rectangle<T> boundary)
       : boundary(boundary) {
-        points.reserve(QUAD_TREE_CAPACITY);
+      points.reserve(QUAD_TREE_CAPACITY);
+
+      massFont.loadFromFile("../../src/fonts/Minecraft rus.ttf");
+      massText.setFont(massFont);
+      massText.setCharacterSize(10);
+      massText.setOutlineColor(sf::Color(51, 51, 51));
+      massText.setOutlineThickness(1.f);
+      massText.setPosition({boundary.x, boundary.y});
     }
 
     ~QuadTree() {
@@ -82,23 +103,23 @@ class QuadTree {
       delete southEast;
     }
 
-    bool insert(Point<T> p) {
+    bool insert(const Point<T>& p) {
       if (!boundary.contains(p)) return false;
 
-      if (points.size() < QUAD_TREE_CAPACITY) {
-        points.push_back(p);
-        return true;
-      } else {
+      mass++;
+      if (!divided) {
+        if (points.size() < QUAD_TREE_CAPACITY) {
+          points.push_back(p);
+          return true;
+        }
         subdivide();
-        if (
-          northWest->insert(p) ||
-          northEast->insert(p) ||
-          southWest->insert(p) ||
-          southEast->insert(p)
-        ) return true;
-        else
-          throw std::runtime_error("The point somehow didn't inserted in any quad");
       }
+
+      return
+        northWest->insert(p) ||
+        northEast->insert(p) ||
+        southWest->insert(p) ||
+        southEast->insert(p);
     }
 
     void query(std::vector<Point<T>>& found, const Rectangle<T>& range) {
@@ -132,8 +153,11 @@ class QuadTree {
         sf::Vertex({x + w, y}, color)
       };
 
+      massText.setString(std::to_string(mass));
+
       target.draw(lineVertical, 2, sf::Lines);
       target.draw(lineHorizontal, 2, sf::Lines);
+      target.draw(massText);
 
       if (divided) {
         northWest->show(target);

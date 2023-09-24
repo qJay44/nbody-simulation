@@ -27,7 +27,7 @@ class App {
   }
 
   void setupProgram() {
-    particles = new ParticleSystem(2000);
+    particles = new ParticleSystem(100);
   }
 
   void draw(float dt) {

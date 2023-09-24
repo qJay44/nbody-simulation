@@ -53,18 +53,17 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
   }
 
   void updateColors() {
-    constexpr int cellSize = 100;
-    constexpr float cellWidth = cellSize / 2.f;  // From the center
-    constexpr float cellHeight = cellSize / 2.f; // From the center
-
-    for (int x = 0; x < WIDTH / cellSize; x++) {
-      for (int y = 0; y < HEIGHT / cellSize; y++) {
-        Rectangle<uint32_t> range{x * cellSize + cellWidth, y * cellSize + cellHeight, cellWidth, cellHeight};
+    for (int x = 0; x < WIDTH / CELL_SIZE; x++) {
+      for (int y = 0; y < HEIGHT / CELL_SIZE; y++) {
+        sf::Vector2f middle{x * CELL_SIZE + CELL_WIDTH, y * CELL_SIZE + CELL_HEIGHT};
+        Rectangle<uint32_t> range{middle.x, middle.y, CELL_WIDTH, CELL_HEIGHT};
         std::vector<Point<uint32_t>> found;
         qt->query(found, range);
 
-        for (Point<uint32_t>& p : found)
-          vertices[*p.data].color = colormap[found.size() / particles.size() * (colormap.size() - 1)];
+        for (Point<uint32_t>& p : found) {
+          /* int index = static_cast<float>(found.size()) / particles.size() * (colormap.size() - 1); */
+          /* vertices[*p.data].color = colormap[index]; */
+        }
       }
     }
   }

@@ -1,3 +1,4 @@
+// Stolen and converted from: https://github.com/jgreitemann/colormap/blob/master/include/colormap/palettes.hpp ("inferno")
 #include "../pch.h"
 
 const std::vector<sf::Color> colormap = {
