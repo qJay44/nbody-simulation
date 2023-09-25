@@ -1,29 +1,23 @@
 #include "../pch.h"
 #include "../preferences.h"
+#include "Particle.hpp"
 #include <vector>
 
-template<class T>
-struct Point {
-  float x, y;
-  const T* data;
-};
-
-template<class T>
 struct Rectangle {
   // NOTE: Coords must point to the center of a rectangle
-  float x, y, w, h;
+  const float x, y, w, h;
+  const float top, right, bottom, left;
 
-  float top    = y - h;
-  float right  = x + w;
-  float bottom = y + h;
-  float left   = x - w;
+  Rectangle(float x, float y, float w, float h)
+    : x(x), y(y), w(w), h(h),
+      top(y - h), right(x + w), bottom(y + h), left(x - w) {}
 
-  bool contains(const Point<T>& p) const {
+  bool contains(const Particle& p) const {
     return (
-      p.x >= x - w &&
-      p.x <= x + w &&
-      p.y >= y - h &&
-      p.y <= y + h
+      p.position.x >= left  &&
+      p.position.x <= right &&
+      p.position.y >= top   &&
+      p.position.y <= bottom
     );
   }
 
@@ -37,63 +31,71 @@ struct Rectangle {
   }
 };
 
-template<class T>
 class QuadTree {
-  Rectangle<T> boundary;
-  std::vector<Point<T>> points;
-  bool divided = false;
-  uint16_t mass = 0;
+  struct GravityField {
+    sf::Vector2f center;
+    double mass = 0;
+  };
 
-  sf::Color color = sf::Color(30, 30, 30);
-  sf::Font massFont;
-  sf::Text massText;
+  Rectangle boundary;
+  std::vector<Particle> particles;
+  uint8_t depth;
+  bool divided = false;
 
   QuadTree* northWest = nullptr;
   QuadTree* northEast = nullptr;
   QuadTree* southWest = nullptr;
   QuadTree* southEast = nullptr;
 
-  void subdivide() {
-    if (divided) return;
-    divided = true;
+  inline static bool isFar(float s, float d) {
+    return s / d < QUAD_TREE_THETA;
+  }
 
+  void updateGravityField(const sf::Vector2f& pos, const uint32_t& m2) {
+    double& m1 = gravityField.mass;
+    float& x = gravityField.center.x;
+    float& y = gravityField.center.y;
+    double m = m1 + m2;
+
+    x = (x * m1 + pos.x * m2) / m;
+    y = (y * m1 + pos.y * m2) / m;
+    m1 = m;
+  }
+
+  void subdivide() {
     const float& x = boundary.x;
     const float& y = boundary.y;
     const float& w = boundary.w;
     const float& h = boundary.h;
 
-    Rectangle<T> nwRect{x - w / 2, y - h / 2, w / 2, h / 2};
-    Rectangle<T> neRect{x + w / 2, y - h / 2, w / 2, h / 2};
-    Rectangle<T> swRect{x - w / 2, y + h / 2, w / 2, h / 2};
-    Rectangle<T> seRect{x + w / 2, y + h / 2, w / 2, h / 2};
+    Rectangle nwRect(x - w / 2, y - h / 2, w / 2, h / 2);
+    Rectangle neRect(x + w / 2, y - h / 2, w / 2, h / 2);
+    Rectangle swRect(x - w / 2, y + h / 2, w / 2, h / 2);
+    Rectangle seRect(x + w / 2, y + h / 2, w / 2, h / 2);
 
-    northWest = new QuadTree(nwRect);
-    northEast = new QuadTree(neRect);
-    southWest = new QuadTree(swRect);
-    southEast = new QuadTree(seRect);
+    northWest = new QuadTree(nwRect, depth + 1);
+    northEast = new QuadTree(neRect, depth + 1);
+    southWest = new QuadTree(swRect, depth + 1);
+    southEast = new QuadTree(seRect, depth + 1);
 
-    for (const Point<T>& p : points) {
+    for (const Particle& p : particles) {
       northWest->insert(p) ||
       northEast->insert(p) ||
       southWest->insert(p) ||
       southEast->insert(p);
     }
 
-    points.clear();
-    points.reserve(0);
+    particles.clear();
+    particles.reserve(0);
+    divided = true;
   }
 
   public:
-    QuadTree(Rectangle<T> boundary)
-      : boundary(boundary) {
-      points.reserve(QUAD_TREE_CAPACITY);
-
-      massFont.loadFromFile("../../src/fonts/Minecraft rus.ttf");
-      massText.setFont(massFont);
-      massText.setCharacterSize(10);
-      massText.setOutlineColor(sf::Color(51, 51, 51));
-      massText.setOutlineThickness(1.f);
-      massText.setPosition({boundary.x, boundary.y});
+    GravityField gravityField;
+    QuadTree(Rectangle boundary, uint8_t depth = 0)
+      : boundary(boundary), depth(depth) {
+      particles.reserve(QUAD_TREE_CAPACITY);
+      gravityField.center = {boundary.x, boundary.y};
     }
 
     ~QuadTree() {
@@ -103,13 +105,15 @@ class QuadTree {
       delete southEast;
     }
 
-    bool insert(const Point<T>& p) {
+    bool insert(const Particle& p) {
+      // Do not insert if particle is not withing boundaries
       if (!boundary.contains(p)) return false;
 
-      mass++;
+      updateGravityField(p.position, p.mass);
+
       if (!divided) {
-        if (points.size() < QUAD_TREE_CAPACITY) {
-          points.push_back(p);
+        if (particles.size() < QUAD_TREE_CAPACITY || depth == QUAD_TREE_DEPTH) {
+          particles.push_back(p);
           return true;
         }
         subdivide();
@@ -122,9 +126,9 @@ class QuadTree {
         southEast->insert(p);
     }
 
-    void query(std::vector<Point<T>>& found, const Rectangle<T>& range) {
+    void query(std::vector<Particle>& found, const Rectangle& range) {
       if (boundary.intersects(range)) {
-        for (const Point<T>& p : points)
+        for (const Particle& p : particles)
           if (range.contains(p))
             found.push_back(p);
       }
@@ -137,27 +141,28 @@ class QuadTree {
       }
     }
 
+    void solveAttraction() {
+      if (divided) {
+        northWest->solveAttraction();
+        northEast->solveAttraction();
+        southWest->solveAttraction();
+        southEast->solveAttraction();
+      } else {
+        for (Particle& p : particles) {
+
+        }
+      }
+    }
+
     void show(sf::RenderTarget& target) {
-      const float& x = boundary.x;
-      const float& y = boundary.y;
-      const float& w = boundary.w;
-      const float& h = boundary.h;
+      static sf::Color color = sf::Color(30, 30, 30);
 
-      sf::Vertex lineVertical[] = {
-        sf::Vertex({x, y - h}, color),
-        sf::Vertex({x, y + h}, color)
-      };
-
-      sf::Vertex lineHorizontal[] = {
-        sf::Vertex({x - w, y}, color),
-        sf::Vertex({x + w, y}, color)
-      };
-
-      massText.setString(std::to_string(mass));
-
-      target.draw(lineVertical, 2, sf::Lines);
-      target.draw(lineHorizontal, 2, sf::Lines);
-      target.draw(massText);
+      sf::VertexArray rect(sf::LinesStrip, 4);
+      rect[0] = sf::Vertex({boundary.left , boundary.top}, color);
+      rect[1] = sf::Vertex({boundary.right, boundary.top}, color);
+      rect[2] = sf::Vertex({boundary.right, boundary.bottom}, color);
+      rect[3] = sf::Vertex({boundary.left , boundary.bottom}, color);
+      target.draw(rect);
 
       if (divided) {
         northWest->show(target);

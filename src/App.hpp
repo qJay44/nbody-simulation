@@ -6,6 +6,7 @@ class App {
   sf::Font genericFont;
   sf::Clock clock;
   sf::Text fpsText;
+  sf::Vector2f mouse;
 
   ParticleSystem* particles;
 
@@ -27,7 +28,7 @@ class App {
   }
 
   void setupProgram() {
-    particles = new ParticleSystem(100);
+    particles = new ParticleSystem(1);
   }
 
   void draw(float dt) {
@@ -57,11 +58,20 @@ class App {
           if (event.type == sf::Event::Closed)
             window.close();
 
-          if (event.type == sf::Event::KeyReleased && event.key.code == sf::Keyboard::Key::Q)
-            window.close();
+          if (event.type == sf::Event::KeyReleased)
+            switch (event.key.code) {
+              case sf::Keyboard::Key::Q:
+                window.close();
+                break;
+              case sf::Keyboard::Key::G:
+                particles->toggleGrid();
+                break;
+              default:
+                break;
+            }
 
-          if (event.type == sf::Event::KeyReleased && event.key.code == sf::Keyboard::Key::G)
-            particles->toggleGrid();
+          if (event.type == sf::Event::MouseMoved)
+            mouse = sf::Vector2f{sf::Mouse::getPosition(window)};
 
           if (event.type == sf::Event::MouseButtonReleased)
             if (event.mouseButton.button == sf::Mouse::Left)
