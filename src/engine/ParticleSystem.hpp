@@ -36,6 +36,9 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
   }
 
   void updateAttraction() {
+    for (Particle& p : particles) {
+      qt->solveAttraction(p);
+    }
   }
 
   void updateParticles() {

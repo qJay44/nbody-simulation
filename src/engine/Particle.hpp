@@ -18,14 +18,13 @@ struct Particle {
     position.y = std::clamp(position.y, 0.f, HEIGHT * 1.f);
   }
 
-  void attract(Particle& rhs) {
+  void attract(const sf::Vector2f& attractorPos, const double& attractorMass) {
     constexpr float G = 6.67e-11;
-    sf::Vector2f v = position - rhs.position;
-    float dist = Particle::magnitude(v);
-    float strength = (G * mass * rhs.mass) / (dist * dist);
+    sf::Vector2f v = position - attractorPos;
+    float dist = magnitude(v);
+    double strength = (G * mass * attractorMass) / (dist * dist);
 
-    Particle::normalize(v);
-    rhs.applyForce(v * strength);
+    applyForce(normalize(v), strength);
   }
 
   private:
@@ -33,12 +32,13 @@ struct Particle {
       return std::max(static_cast<float>(sqrt(vec.x * vec.x + vec.y * vec.y)), 5.f);
     }
 
-    inline static void normalize(sf::Vector2f& vec) {
-      vec /= std::max(static_cast<float>(sqrt(vec.x * vec.x + vec.y * vec.y)), 0.0001f);
+    inline static sf::Vector2f normalize(const sf::Vector2f& vec) {
+      return vec / std::max(static_cast<float>(sqrt(vec.x * vec.x + vec.y * vec.y)), 0.0001f);
     }
 
-    void applyForce(sf::Vector2f force) {
-      acceleration += force / mass;
+    void applyForce(sf::Vector2f direction, double& strength) {
+      acceleration.x -= (direction.x * strength) / mass;
+      acceleration.y -= (direction.y * strength) / mass;
     }
 };
 

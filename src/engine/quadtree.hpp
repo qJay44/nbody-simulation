@@ -47,6 +47,11 @@ class QuadTree {
   QuadTree* southWest = nullptr;
   QuadTree* southEast = nullptr;
 
+  inline static float distance(const sf::Vector2f& v1, const sf::Vector2f& v2) {
+    sf::Vector2f v = v1 - v2;
+    return sqrt(v1.x * v1.x + v2.y * v2.y);
+  }
+
   inline static bool isFar(float s, float d) {
     return s / d < QUAD_TREE_THETA;
   }
@@ -106,14 +111,14 @@ class QuadTree {
     }
 
     bool insert(const Particle& p) {
-      // Do not insert if particle is not withing boundaries
+      // Do not insert if particle is not within boundaries
       if (!boundary.contains(p)) return false;
 
-      updateGravityField(p.position, p.mass);
 
       if (!divided) {
         if (particles.size() < QUAD_TREE_CAPACITY || depth == QUAD_TREE_DEPTH) {
           particles.push_back(p);
+          updateGravityField(p.position, p.mass);
           return true;
         }
         subdivide();
@@ -141,17 +146,19 @@ class QuadTree {
       }
     }
 
-    void solveAttraction() {
+    bool solveAttraction(Particle& p) {
       if (divided) {
-        northWest->solveAttraction();
-        northEast->solveAttraction();
-        southWest->solveAttraction();
-        southEast->solveAttraction();
-      } else {
-        for (Particle& p : particles) {
-
+        if (!isFar(boundary.w * 2.f, distance(p.position, gravityField.center))) {
+          p.attract(gravityField.center, gravityField.mass);
+        } else {
+          northWest->solveAttraction(p) ||
+          northEast->solveAttraction(p) ||
+          southWest->solveAttraction(p) ||
+          southEast->solveAttraction(p);
         }
-      }
+      } else
+        p.attract(gravityField.center, gravityField.mass);
+      return true;
     }
 
     void show(sf::RenderTarget& target) {
