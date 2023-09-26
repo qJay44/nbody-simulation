@@ -37,6 +37,7 @@ class QuadTree {
     double mass = 0;
   };
 
+  GravityField gravityField;
   Rectangle boundary;
   std::vector<Particle> particles;
   uint8_t depth;
@@ -96,7 +97,6 @@ class QuadTree {
   }
 
   public:
-    GravityField gravityField;
     QuadTree(Rectangle boundary, uint8_t depth = 0)
       : boundary(boundary), depth(depth) {
       particles.reserve(QUAD_TREE_CAPACITY);
@@ -114,11 +114,11 @@ class QuadTree {
       // Do not insert if particle is not within boundaries
       if (!boundary.contains(p)) return false;
 
+      updateGravityField(p.position, p.mass);
 
       if (!divided) {
         if (particles.size() < QUAD_TREE_CAPACITY || depth == QUAD_TREE_DEPTH) {
           particles.push_back(p);
-          updateGravityField(p.position, p.mass);
           return true;
         }
         subdivide();
@@ -146,19 +146,20 @@ class QuadTree {
       }
     }
 
-    bool solveAttraction(Particle& p) {
+    void solveAttraction(Particle& p1) {
       if (divided) {
-        if (!isFar(boundary.w * 2.f, distance(p.position, gravityField.center))) {
-          p.attract(gravityField.center, gravityField.mass);
-        } else {
-          northWest->solveAttraction(p) ||
-          northEast->solveAttraction(p) ||
-          southWest->solveAttraction(p) ||
-          southEast->solveAttraction(p);
+        if (isFar(boundary.w * 2.f, distance(p1.position, gravityField.center)))
+          p1.attract(gravityField.center, gravityField.mass);
+        else {
+          northWest->solveAttraction(p1);
+          northEast->solveAttraction(p1);
+          southWest->solveAttraction(p1);
+          southEast->solveAttraction(p1);
         }
-      } else
-        p.attract(gravityField.center, gravityField.mass);
-      return true;
+      } else if (particles.size() > 0) {
+          for (Particle& p2 : particles)
+            if (&p1 != &p2) p1.attract(p2.position, p2.mass);
+      }
     }
 
     void show(sf::RenderTarget& target) {

@@ -8,7 +8,12 @@ class App {
   sf::Text fpsText;
   sf::Vector2f mouse;
 
+  sf::RenderTexture backgroundTexture;
+  sf::Sprite backgroundSprite;
+  sf::Shader shader;
+
   ParticleSystem* particles;
+  bool useShader = true;
 
   void setupSFML() {
     // Setup main window
@@ -25,14 +30,34 @@ class App {
     fpsText.setOutlineColor(sf::Color(31, 31, 31));
     fpsText.setOutlineThickness(3.f);
     fpsText.setPosition({ WIDTH - fpsText.getLocalBounds().width, 0 });
+
+    // Main canvas setup
+    backgroundTexture.create(WIDTH, HEIGHT);
+    backgroundSprite.setTexture(backgroundTexture.getTexture());
+
+    // Shader setup
+    shader.loadFromFile("../../src/shaders/blur.frag", sf::Shader::Fragment);
+    shader.setUniform("texture", backgroundTexture.getTexture());
   }
 
   void setupProgram() {
-    particles = new ParticleSystem(1000);
+    particles = new ParticleSystem(5000);
   }
 
   void draw(float dt) {
-    window.draw(*particles);
+    backgroundTexture.draw(*particles);
+    window.draw(backgroundSprite);
+
+    // Apply bloom shader
+    if (useShader) {
+      bool isHorizontal = true;
+      for (int i = 0; i < 50; i++) {
+        shader.setUniform("isHorizontal", isHorizontal);
+        backgroundTexture.draw(backgroundSprite, &shader);
+        isHorizontal = !isHorizontal;
+      }
+      window.draw(backgroundSprite, sf::BlendAdd);
+    }
 
     int fps = static_cast<int>(1.f / dt);
     fpsText.setString(std::to_string(fps));
@@ -66,6 +91,9 @@ class App {
               case sf::Keyboard::Key::G:
                 particles->toggleGrid();
                 break;
+              case sf::Keyboard::Key::S:
+                useShader = !useShader;
+                break;
               default:
                 break;
             }
@@ -78,7 +106,10 @@ class App {
               particles->addParticle(sf::Vector2f{sf::Mouse::getPosition(window)});
         }
 
+        backgroundTexture.display();
+
         window.clear();
+
         particles->update();
 
         draw(clock.restart().asSeconds());

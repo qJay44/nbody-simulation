@@ -11,14 +11,8 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
   bool showGrid = false;
 
   virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const {
-    if (showGrid) {
+    if (showGrid)
       qt->show(target);
-    }
-
-    sf::CircleShape c(3.f);
-    c.setPosition(qt->gravityField.center);
-    c.setFillColor(sf::Color::Magenta);
-    target.draw(c);
 
     states.transform *= getTransform();
     states.texture = NULL;
@@ -26,19 +20,15 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
   }
 
   void updateQuadTree() {
-    delete qt;
-    qt = new QuadTree(*initBoundary);
+    delete qt; qt = new QuadTree(*initBoundary);
 
-    for (const Particle& particle : particles) {
-      const sf::Vector2f& pos = particle.position;
+    for (const Particle& particle : particles)
       qt->insert(particle);
-    }
   }
 
   void updateAttraction() {
-    for (Particle& p : particles) {
+    for (Particle& p : particles)
       qt->solveAttraction(p);
-    }
   }
 
   void updateParticles() {
@@ -57,8 +47,8 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
         qt->query(found, range);
 
         for (const Particle& p : found) {
-          /* int index = static_cast<float>(found.size()) / particles.size() * (colormap.size() - 1); */
-          /* vertices[*p.data].color = colormap[index]; */
+          int index = static_cast<float>(found.size()) / particles.size() * (colormap.size() - 1);
+          vertices[p.index].color = colormap[index];
         }
       }
     }
