@@ -11,6 +11,7 @@ class App {
   sf::RenderTexture backgroundTexture;
   sf::Sprite backgroundSprite;
   sf::Shader shader;
+  sf::Texture circleTexture;
 
   ParticleSystem* particles;
   bool useShader = true;
@@ -35,16 +36,28 @@ class App {
     backgroundTexture.create(WIDTH, HEIGHT);
     backgroundSprite.setTexture(backgroundTexture.getTexture());
 
+    // Load circle texture
+    circleTexture.loadFromFile("../../src/res/circle.png");
+    circleTexture.generateMipmap();
+    circleTexture.setSmooth(true);
+
     // Shader setup
     shader.loadFromFile("../../src/shaders/blur.frag", sf::Shader::Fragment);
     shader.setUniform("texture", backgroundTexture.getTexture());
   }
 
   void setupProgram() {
-    particles = new ParticleSystem(5000);
+    particles = new ParticleSystem(&circleTexture);
+  }
+
+  void fade() {
+    sf::RectangleShape rect({WIDTH, HEIGHT});
+    rect.setFillColor({0, 0, 0, 80});
+    backgroundTexture.draw(rect);
   }
 
   void draw(float dt) {
+    fade();
     backgroundTexture.draw(*particles);
     window.draw(backgroundSprite);
 

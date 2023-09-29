@@ -1,5 +1,6 @@
 #include "../pch.h"
 #include "../preferences.h"
+#include "utils/colormap.hpp"
 #include "Particle.hpp"
 #include <vector>
 
@@ -12,12 +13,14 @@ struct Rectangle {
     : x(x), y(y), w(w), h(h),
       top(y - h), right(x + w), bottom(y + h), left(x - w) {}
 
-  bool contains(const Particle& p) const {
+  bool contains(const Particle* p) const {
+    const float& px = p->getPosition().x;
+    const float& py = p->getPosition().y;
     return (
-      p.position.x >= left  &&
-      p.position.x <= right &&
-      p.position.y >= top   &&
-      p.position.y <= bottom
+      px >= left  &&
+      px <= right &&
+      py >= top   &&
+      py <= bottom
     );
   }
 
@@ -34,12 +37,12 @@ struct Rectangle {
 class QuadTree {
   struct GravityField {
     sf::Vector2f center;
-    double mass = 0;
+    double mass = 0.0001;
   };
 
   GravityField gravityField;
   Rectangle boundary;
-  std::vector<Particle> particles;
+  std::vector<Particle*> particles;
   uint8_t depth;
   bool divided = false;
 
@@ -50,7 +53,7 @@ class QuadTree {
 
   inline static float distance(const sf::Vector2f& v1, const sf::Vector2f& v2) {
     sf::Vector2f v = v1 - v2;
-    return sqrt(v1.x * v1.x + v2.y * v2.y);
+    return sqrt(v.x * v.x + v.y * v.y);
   }
 
   inline static bool isFar(float s, float d) {
@@ -84,7 +87,7 @@ class QuadTree {
     southWest = new QuadTree(swRect, depth + 1);
     southEast = new QuadTree(seRect, depth + 1);
 
-    for (const Particle& p : particles) {
+    for (Particle* p : particles) {
       northWest->insert(p) ||
       northEast->insert(p) ||
       southWest->insert(p) ||
@@ -110,11 +113,11 @@ class QuadTree {
       delete southEast;
     }
 
-    bool insert(const Particle& p) {
+    bool insert(Particle* p) {
       // Do not insert if particle is not within boundaries
       if (!boundary.contains(p)) return false;
 
-      updateGravityField(p.position, p.mass);
+      updateGravityField(p->getPosition(), p->getMass());
 
       if (!divided) {
         if (particles.size() < QUAD_TREE_CAPACITY || depth == QUAD_TREE_DEPTH) {
@@ -131,9 +134,9 @@ class QuadTree {
         southEast->insert(p);
     }
 
-    void query(std::vector<Particle>& found, const Rectangle& range) {
+    void query(std::vector<Particle*>& found, const Rectangle& range) {
       if (boundary.intersects(range)) {
-        for (const Particle& p : particles)
+        for (Particle* p : particles)
           if (range.contains(p))
             found.push_back(p);
       }
@@ -146,10 +149,10 @@ class QuadTree {
       }
     }
 
-    void solveAttraction(Particle& p1) {
+    void solveAttraction(Particle* p1) {
       if (divided) {
-        if (isFar(boundary.w * 2.f, distance(p1.position, gravityField.center)))
-          p1.attract(gravityField.center, gravityField.mass);
+        if (isFar(boundary.w * 2.f, distance(p1->getPosition(), gravityField.center)))
+          p1->attract(gravityField.center, gravityField.mass);
         else {
           northWest->solveAttraction(p1);
           northEast->solveAttraction(p1);
@@ -157,8 +160,20 @@ class QuadTree {
           southEast->solveAttraction(p1);
         }
       } else if (particles.size() > 0) {
-          for (Particle& p2 : particles)
-            if (&p1 != &p2) p1.attract(p2.position, p2.mass);
+          for (Particle* p2 : particles)
+            if (p1 != p2) p1->attract(p2->getPosition(), p2->getMass());
+      }
+    }
+
+    void colorizeParticles() {
+      for (Particle* p : particles)
+        p->setColor(colormap[gravityField.mass / HIGHEST_MASS * 255]);
+
+      if (divided) {
+        northEast->colorizeParticles();
+        northWest->colorizeParticles();
+        southWest->colorizeParticles();
+        southEast->colorizeParticles();
       }
     }
 

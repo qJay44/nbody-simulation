@@ -1,5 +1,5 @@
 // Stolen and converted from: https://github.com/jgreitemann/colormap/blob/master/include/colormap/palettes.hpp ("inferno")
-#include "../pch.h"
+#include "../../pch.h"
 
 const std::vector<sf::Color> colormap = {
   {12, 7, 134},

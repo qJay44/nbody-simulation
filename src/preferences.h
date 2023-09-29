@@ -2,10 +2,11 @@
 #define WIDTH 1200
 #define HEIGHT 720
 
-#define CELL_SIZE 100.f
-#define CELL_WIDTH (CELL_SIZE / 2.f)  // From the center
-#define CELL_HEIGHT (CELL_SIZE / 2.f) // From the center
+#define RADIUS 2
+#define INITIAL_PARTICLES 5000
+#define INITIAL_MASS 1e10f
+#define HIGHEST_MASS (INITIAL_MASS * 3) // 
 
-#define QUAD_TREE_DEPTH 10
+#define QUAD_TREE_DEPTH 50
 #define QUAD_TREE_CAPACITY 1
 #define QUAD_TREE_THETA 0.5f
