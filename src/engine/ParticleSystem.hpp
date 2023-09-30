@@ -33,7 +33,7 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
 
   void updateQuadTree() {
     delete qt; qt = new QuadTree(*initBoundary);
-    for (Particle& particle : particles)
+    for (const Particle& particle : particles)
       qt->insert(&particle);
   }
 
@@ -58,8 +58,35 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
       particles[i].update();
   }
 
+  void updateColorsThreaded(uint32_t begin, uint32_t end) {
+    static const float offset = CELL_SIZE / 2.f;
+    for (float x = begin; x < end; x++) {
+      for (float y = 0; y < ROWS; y++) {
+        Rectangle rect{
+          x * CELL_SIZE + offset, y * CELL_SIZE + offset,
+          offset, offset
+        };
+        std::vector<const Particle*> found;
+
+        qt->query(found, rect);
+        for (const Particle* p : found) {
+          int index = static_cast<float>(found.size()) / particles.size() * 255;
+          const_cast<Particle*>(p)->setColor(colormap[index]);
+        }
+      }
+    }
+  }
+
   void updateColors() {
-    qt->colorizeParticles();
+    static const float size = tp.size();
+    static const uint32_t slice = ceil(COLUMNS / size);
+
+    for (int i = 0; i < size; i++) {
+      uint32_t begin = i * slice;
+      uint32_t end = begin + slice;
+      tp.queueJob([this, begin, end] () {updateColorsThreaded(begin, end);});
+    }
+    tp.waitForCompletion();
   }
 
   public:

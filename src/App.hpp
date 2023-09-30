@@ -119,6 +119,7 @@ class App {
               particles->addParticle(sf::Vector2f{sf::Mouse::getPosition(window)});
         }
 
+        /* backgroundTexture.clear(); */
         backgroundTexture.display();
 
         window.clear();

@@ -44,15 +44,10 @@ class Particle {
       float texWidght = tex->getSize().x;
       float texHeight = tex->getSize().y;
 
-      sf::Vertex& tl = vertices[0];
-      sf::Vertex& tr = vertices[1];
-      sf::Vertex& br = vertices[2];
-      sf::Vertex& bl = vertices[3];
-
-      tl.texCoords = {0.f      , 0.f      };
-      tr.texCoords = {texWidght, 0.f      };
-      br.texCoords = {texWidght, texHeight};
-      bl.texCoords = {0.f      , texHeight};
+      vertices[0].texCoords = {0.f      , 0.f      };
+      vertices[1].texCoords = {texWidght, 0.f      };
+      vertices[2].texCoords = {texWidght, texHeight};
+      vertices[3].texCoords = {0.f      , texHeight};
     }
 
     const sf::Vector2f& getPosition() const {

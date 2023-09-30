@@ -42,7 +42,7 @@ class QuadTree {
 
   GravityField gravityField;
   Rectangle boundary;
-  std::vector<Particle*> particles;
+  std::vector<const Particle*> particles;
   uint8_t depth;
   bool divided = false;
 
@@ -87,7 +87,7 @@ class QuadTree {
     southWest = new QuadTree(swRect, depth + 1);
     southEast = new QuadTree(seRect, depth + 1);
 
-    for (Particle* p : particles) {
+    for (const Particle* p : particles) {
       northWest->insert(p) ||
       northEast->insert(p) ||
       southWest->insert(p) ||
@@ -113,7 +113,7 @@ class QuadTree {
       delete southEast;
     }
 
-    bool insert(Particle* p) {
+    bool insert(const Particle* p) {
       // Do not insert if particle is not within boundaries
       if (!boundary.contains(p)) return false;
 
@@ -134,9 +134,9 @@ class QuadTree {
         southEast->insert(p);
     }
 
-    void query(std::vector<Particle*>& found, const Rectangle& range) {
+    void query(std::vector<const Particle*>& found, const Rectangle& range) {
       if (boundary.intersects(range)) {
-        for (Particle* p : particles)
+        for (const Particle* p : particles)
           if (range.contains(p))
             found.push_back(p);
       }
@@ -160,20 +160,8 @@ class QuadTree {
           southEast->solveAttraction(p1);
         }
       } else if (particles.size() > 0) {
-          for (Particle* p2 : particles)
+          for (const Particle* p2 : particles)
             if (p1 != p2) p1->attract(p2->getPosition(), p2->getMass());
-      }
-    }
-
-    void colorizeParticles() {
-      for (Particle* p : particles)
-        p->setColor(colormap[gravityField.mass / HIGHEST_MASS * 255]);
-
-      if (divided) {
-        northEast->colorizeParticles();
-        northWest->colorizeParticles();
-        southWest->colorizeParticles();
-        southEast->colorizeParticles();
       }
     }
 
