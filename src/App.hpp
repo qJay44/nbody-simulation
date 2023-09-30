@@ -10,7 +10,8 @@ class App {
 
   sf::RenderTexture backgroundTexture;
   sf::Sprite backgroundSprite;
-  sf::Shader shader;
+  sf::Shader blur;
+  sf::Shader mix;
   sf::Texture circleTexture;
 
   ParticleSystem* particles;
@@ -42,22 +43,17 @@ class App {
     circleTexture.setSmooth(true);
 
     // Shader setup
-    shader.loadFromFile("../../src/shaders/blur.frag", sf::Shader::Fragment);
-    shader.setUniform("texture", backgroundTexture.getTexture());
+    blur.loadFromFile("../../src/shaders/blur.frag", sf::Shader::Fragment);
+    blur.setUniform("texture", backgroundTexture.getTexture());
+    mix.loadFromFile("../../src/shaders/mix.frag", sf::Shader::Fragment);
+    mix.setUniform("texture", backgroundTexture.getTexture());
   }
 
   void setupProgram() {
     particles = new ParticleSystem(&circleTexture);
   }
 
-  void fade() {
-    sf::RectangleShape rect({WIDTH, HEIGHT});
-    rect.setFillColor({0, 0, 0, 80});
-    backgroundTexture.draw(rect);
-  }
-
   void draw(float dt) {
-    fade();
     backgroundTexture.draw(*particles);
     window.draw(backgroundSprite);
 
@@ -65,8 +61,15 @@ class App {
     if (useShader) {
       bool isHorizontal = true;
       for (int i = 0; i < 50; i++) {
-        shader.setUniform("isHorizontal", isHorizontal);
-        backgroundTexture.draw(backgroundSprite, &shader);
+        blur.setUniform("isHorizontal", isHorizontal);
+        backgroundTexture.draw(backgroundSprite, &blur);
+        isHorizontal = !isHorizontal;
+      }
+      window.draw(backgroundSprite, sf::BlendAdd);
+
+      for (int i = 0; i < 5; i++) {
+        mix.setUniform("isHorizontal", isHorizontal);
+        backgroundTexture.draw(backgroundSprite, &mix);
         isHorizontal = !isHorizontal;
       }
       window.draw(backgroundSprite, sf::BlendAdd);
@@ -119,7 +122,7 @@ class App {
               particles->addParticle(sf::Vector2f{sf::Mouse::getPosition(window)});
         }
 
-        /* backgroundTexture.clear(); */
+        backgroundTexture.clear();
         backgroundTexture.display();
 
         window.clear();

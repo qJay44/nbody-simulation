@@ -3,7 +3,8 @@
 #include <cmath>
 
 class Particle {
-  float mass = 1e10f;
+  float mass;
+  float radius;
   sf::Vector2f position;
   sf::Vector2f velocity;
   sf::Vector2f acceleration;
@@ -17,7 +18,7 @@ class Particle {
     return vec / std::max(static_cast<float>(sqrt(vec.x * vec.x + vec.y * vec.y)), 0.0001f);
   }
 
-  void applyForce(sf::Vector2f direction, double& strength) {
+  void applyForce(sf::Vector2f direction, const double& strength) {
     acceleration.x -= (direction.x * strength) / mass;
     acceleration.y -= (direction.y * strength) / mass;
   }
@@ -26,21 +27,18 @@ class Particle {
     velocity += acceleration;
     position += velocity;
     acceleration *= 0.f;
-
-    position.x = std::clamp(position.x, 0.f, WIDTH * 1.f);
-    position.y = std::clamp(position.y, 0.f, HEIGHT * 1.f);
   }
 
   void updatePositionVertices() {
-    vertices[0].position = position + sf::Vector2f{-RADIUS, -RADIUS};
-    vertices[1].position = position + sf::Vector2f{ RADIUS, -RADIUS};
-    vertices[2].position = position + sf::Vector2f{ RADIUS,  RADIUS};
-    vertices[3].position = position + sf::Vector2f{-RADIUS,  RADIUS};
+    vertices[0].position = position + sf::Vector2f{-radius, -radius};
+    vertices[1].position = position + sf::Vector2f{ radius, -radius};
+    vertices[2].position = position + sf::Vector2f{ radius,  radius};
+    vertices[3].position = position + sf::Vector2f{-radius,  radius};
   }
 
   public:
-    Particle(sf::Vector2f position, const sf::Texture* tex, float mass = INITIAL_MASS)
-      : position(position), mass(mass) {
+    Particle(sf::Vector2f position, const sf::Texture* tex, float mass = INITIAL_MASS, float radius = RADIUS)
+      : position(position), mass(mass), radius(radius) {
       float texWidght = tex->getSize().x;
       float texHeight = tex->getSize().y;
 
@@ -48,6 +46,11 @@ class Particle {
       vertices[1].texCoords = {texWidght, 0.f      };
       vertices[2].texCoords = {texWidght, texHeight};
       vertices[3].texCoords = {0.f      , texHeight};
+
+      vertices[0].color = {1, 50, 40};
+      vertices[1].color = {1, 50, 40};
+      vertices[2].color = {1, 50, 40};
+      vertices[3].color = {1, 50, 40};
     }
 
     const sf::Vector2f& getPosition() const {

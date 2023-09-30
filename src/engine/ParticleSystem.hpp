@@ -5,6 +5,7 @@
 class ParticleSystem : public sf::Drawable, public sf::Transformable {
   const sf::Texture* texture;
   std::vector<Particle> particles;
+  sf::VertexArray vertices{sf::Quads, INITIAL_PARTICLES * 4};
   Rectangle* initBoundary = nullptr;
   QuadTree* qt = nullptr;
   ThreadPool tp;
@@ -17,18 +18,17 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
 
     states.transform *= getTransform();
     states.texture = texture;
-    target.draw(prepareVertices(), states);
+    target.draw(vertices, states);
   }
 
-  sf::VertexArray prepareVertices() const {
-    sf::VertexArray vertices{sf::Quads};
-    for (const Particle& particle : particles) {
-      const sf::VertexArray& pv = particle.getVertices();
-      for (int i = 0; i < 4; i++)
-        vertices.append(pv[i]);
+  void updateVertices() {
+    for (int i = 0; i < particles.size(); i++) {
+      const sf::VertexArray& va = particles[i].getVertices();
+      vertices[(i << 2) + 0] = va[0];
+      vertices[(i << 2) + 1] = va[1];
+      vertices[(i << 2) + 2] = va[2];
+      vertices[(i << 2) + 3] = va[3];
     }
-
-    return vertices;
   }
 
   void updateQuadTree() {
@@ -58,37 +58,6 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
       particles[i].update();
   }
 
-  void updateColorsThreaded(uint32_t begin, uint32_t end) {
-    static const float offset = CELL_SIZE / 2.f;
-    for (float x = begin; x < end; x++) {
-      for (float y = 0; y < ROWS; y++) {
-        Rectangle rect{
-          x * CELL_SIZE + offset, y * CELL_SIZE + offset,
-          offset, offset
-        };
-        std::vector<const Particle*> found;
-
-        qt->query(found, rect);
-        for (const Particle* p : found) {
-          int index = static_cast<float>(found.size()) / particles.size() * 255;
-          const_cast<Particle*>(p)->setColor(colormap[index]);
-        }
-      }
-    }
-  }
-
-  void updateColors() {
-    static const float size = tp.size();
-    static const uint32_t slice = ceil(COLUMNS / size);
-
-    for (int i = 0; i < size; i++) {
-      uint32_t begin = i * slice;
-      uint32_t end = begin + slice;
-      tp.queueJob([this, begin, end] () {updateColorsThreaded(begin, end);});
-    }
-    tp.waitForCompletion();
-  }
-
   public:
     ParticleSystem(const sf::Texture* texture)
       : texture(texture) {
@@ -111,7 +80,8 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
     }
 
     void addParticle(sf::Vector2f pos) {
-      particles.push_back(Particle(pos, texture, 1e11f));
+      particles.push_back(Particle(pos, texture, 1e13f, 12.f));
+      vertices.resize(particles.size() * 4);
     }
 
     void toggleGrid() { showGrid = !showGrid; }
@@ -120,7 +90,7 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
       updateQuadTree();
       updateAttraction();
       updateParticles();
-      updateColors();
+      updateVertices();
     }
 };
 
