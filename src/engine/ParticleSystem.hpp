@@ -1,5 +1,9 @@
-#include "quadtree.hpp"
+#define _USE_MATH_DEFINES
+#include <cmath>
+
 #include <algorithm>
+#include "myutils.hpp"
+#include "quadtree.hpp"
 
 class ParticleSystem : public sf::Drawable, public sf::Transformable {
   const sf::Texture* texture;
@@ -17,6 +21,7 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
     states.transform *= getTransform();
     states.texture = texture;
     states.blendMode = sf::BlendAdd;
+
     target.draw(vertices, states);
   }
 
@@ -48,16 +53,22 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
   }
 
   public:
-    ParticleSystem(const sf::Texture* texture)
-      : texture(texture) {
+    ParticleSystem(const sf::Texture* texture) : texture(texture) {
+      sf::Vector2f center{WIDTH / 2.f, HEIGHT / 2.f};
+
       // Setup particles
-      for (int i = 0; i < INITIAL_PARTICLES; i++) {
-        sf::Vector2f pos = {Random::GetFloat(0.f, WIDTH * 1.f), Random::GetFloat(0.f, HEIGHT * 1.f)};
+      for (float i = 0; i < INITIAL_PARTICLES; i++) {
+        sf::Vector2f pos = center;
+
+        double rad = (i * SPIRAL_STEP) * M_PI;
+        sf::Vector2f direction(cos(rad), sin(rad));
+        pos += direction * (i * SPIRAL_OFFSET);
+
         particles.push_back(Particle(pos));
       }
 
       // Setup quad tree
-      initBoundary = new Rectangle(WIDTH / 2.f, HEIGHT / 2.f, WIDTH / 2.f, HEIGHT / 2.f);
+      initBoundary = new Rectangle(center.x, center.y, center.x, center.y);
       qt = new QuadTree(*initBoundary);
     }
 

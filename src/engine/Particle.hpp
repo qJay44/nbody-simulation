@@ -1,6 +1,5 @@
 #include "../pch.h"
 #include <cmath>
-#include "myutils.hpp"
 
 class Particle {
   float mass;

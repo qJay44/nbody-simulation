@@ -5,10 +5,10 @@
 #include <list>
 
 struct Rectangle {
-  // NOTE: Coords must point to the center of a rectangle
   const float x, y, w, h;
   const float top, right, bottom, left;
 
+  // Coords must point to the center of the rectangle
   Rectangle(float x, float y, float w, float h)
     : x(x), y(y), w(w), h(h),
       top(y - h), right(x + w), bottom(y + h), left(x - w) {}
@@ -132,7 +132,7 @@ class QuadTree {
       }
 
       // 2. If this node is an internal node, update the gravity field.
-      // Recursively insert the partricle in the appropriate quadrant
+      // Recursively insert the particle in the appropriate quadrant
       if (divided) {
         updateGravityField(p->getPosition(), p->getMass());
         return
@@ -158,7 +158,7 @@ class QuadTree {
             p1->attract(p2->getPosition(), p2->getMass());
 
       // 2. Otherwise, calculate the ration s/d. If s/d < θ,
-      // treat this internal node as a sinble body, and calculate the force for the particle.
+      // treat this internal node as a single body, and calculate the force for the particle.
       } else if (isFar(boundary.w * 2.f, distance(p1->getPosition(), gravityField.center)))
           p1->attract(gravityField.center, gravityField.mass);
 
