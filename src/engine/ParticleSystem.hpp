@@ -54,22 +54,28 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
 
   public:
     ParticleSystem(const sf::Texture* texture) : texture(texture) {
-      sf::Vector2f center{WIDTH / 2.f, HEIGHT / 2.f};
+      static bool initialized = false; // Only one particle system should exist
+      if (!initialized) {
+        sf::Vector2f center{WIDTH / 2.f, HEIGHT / 2.f};
 
-      // Setup particles
-      for (float i = 0; i < INITIAL_PARTICLES; i++) {
-        sf::Vector2f pos = center;
+        // Setup particles
+        for (int i = 0; i < INITIAL_PARTICLES; i++) {
+          sf::Vector2f pos = center;
 
-        double rad = (i * SPIRAL_STEP) * M_PI;
-        sf::Vector2f direction(cos(rad), sin(rad));
-        pos += direction * (i * SPIRAL_OFFSET);
+          double armStartRad = (int)(i / SPIRAL_ARM_LENGTH) * (2. * M_PI) / SPIRAL_ARMS;
+          double rad = armStartRad + i % SPIRAL_ARM_LENGTH * SPIRAL_STEP;
+          sf::Vector2f direction(cos(rad), sin(rad));
+          pos += direction * (i % SPIRAL_ARM_LENGTH * SPIRAL_OFFSET);
 
-        particles.push_back(Particle(pos));
+          particles.push_back(Particle(pos));
+        }
+
+        // Setup quad tree
+        initBoundary = new Rectangle(center.x, center.y, center.x, center.y);
+        qt = new QuadTree(*initBoundary);
+
+        initialized = true;
       }
-
-      // Setup quad tree
-      initBoundary = new Rectangle(center.x, center.y, center.x, center.y);
-      qt = new QuadTree(*initBoundary);
     }
 
     ~ParticleSystem() {

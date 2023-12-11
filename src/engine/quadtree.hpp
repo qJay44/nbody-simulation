@@ -60,13 +60,13 @@ class QuadTree {
   QuadTree* southWest = nullptr;
   QuadTree* southEast = nullptr;
 
-  inline static float distance(const sf::Vector2f& v1, const sf::Vector2f& v2) {
+  inline static float distanceSq(const sf::Vector2f& v1, const sf::Vector2f& v2) {
     sf::Vector2f v = v1 - v2;
-    return sqrt(v.x * v.x + v.y * v.y);
+    return v.x * v.x + v.y * v.y;
   }
 
-  inline static bool isFar(float s, float d) {
-    return s / d < QUAD_TREE_THETA;
+  inline static bool isFar(float s, float dd) {
+    return (s * s) / dd < QUAD_TREE_THETA;
   }
 
   void updateGravityField(const sf::Vector2f& pos, const uint32_t& m2) {
@@ -159,7 +159,7 @@ class QuadTree {
 
       // 2. Otherwise, calculate the ration s/d. If s/d < θ,
       // treat this internal node as a single body, and calculate the force for the particle.
-      } else if (isFar(boundary.w * 2.f, distance(p1->getPosition(), gravityField.center)))
+      } else if (isFar(boundary.w * 2.f, distanceSq(p1->getPosition(), gravityField.center)))
           p1->attract(gravityField.center, gravityField.mass);
 
       // 3. Otherwise, run the procedure recursively for other nodes

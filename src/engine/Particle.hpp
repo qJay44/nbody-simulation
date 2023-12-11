@@ -25,7 +25,7 @@ class Particle {
   public:
     Particle(sf::Vector2f position, float mass = INITIAL_MASS, float radius = RADIUS)
       : position(position), mass(mass), radius(radius) {
-      static const sf::Color color = sf::Color(60, 60, 60);
+      static const sf::Color color = sf::Color(19, 29, 49);
 
       vertices[0].texCoords = {0.f, 0.f};
       vertices[1].texCoords = {CIRCLE_TEXTURE_SIZE, 0.f};
@@ -56,7 +56,8 @@ class Particle {
     }
 
     void attract(const sf::Vector2f& attractorPos, const float& attractorMass) {
-      constexpr float distMin = 0.01f;
+      // Constrain high acceleration at tiny distance between particles
+      constexpr float distMin = 0.1f;
 
       sf::Vector2f v = attractorPos - position;
       float magSq = std::max(v.x * v.x + v.y * v.y, distMin);
