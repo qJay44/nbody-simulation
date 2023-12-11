@@ -17,8 +17,6 @@ include_directories(${MY_UTILS_PATH})
 
 add_executable(MyProject
   ${SRC_DIR}main.cpp
-  ${MY_UTILS_PATH}myutils.cpp
-  ${SRC_DIR}engine/utils/ThreadPool.cpp
 )
 
 target_precompile_headers(${PROJECT_NAME} PUBLIC ${SRC_DIR}pch.h)

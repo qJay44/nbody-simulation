@@ -6,16 +6,14 @@ class App {
   sf::Font genericFont;
   sf::Clock clock;
   sf::Text fpsText;
-  sf::Vector2f mouse;
+  sf::Vector2f mousePos;
 
   sf::RenderTexture backgroundTexture;
   sf::Sprite backgroundSprite;
-  sf::Shader blur;
-  sf::Shader mix;
   sf::Texture circleTexture;
 
   ParticleSystem* particles;
-  bool useShader = true;
+  float dt;
 
   void setupSFML() {
     // Setup main window
@@ -23,7 +21,7 @@ class App {
     window.setFramerateLimit(90);
 
     // Font for some test text
-    genericFont.loadFromFile("../../src/fonts/Minecraft rus.ttf");
+    genericFont.loadFromFile("../../src/res/Minecraft rus.ttf");
 
     // FPS text setup
     fpsText.setString("99");
@@ -41,39 +39,15 @@ class App {
     circleTexture.loadFromFile("../../src/res/circle.png");
     circleTexture.generateMipmap();
     circleTexture.setSmooth(true);
-
-    // Shader setup
-    blur.loadFromFile("../../src/shaders/blur.frag", sf::Shader::Fragment);
-    blur.setUniform("texture", backgroundTexture.getTexture());
-    mix.loadFromFile("../../src/shaders/mix.frag", sf::Shader::Fragment);
-    mix.setUniform("texture", backgroundTexture.getTexture());
   }
 
   void setupProgram() {
     particles = new ParticleSystem(&circleTexture);
   }
 
-  void draw(float dt) {
+  void draw() {
     backgroundTexture.draw(*particles);
     window.draw(backgroundSprite);
-
-    // Apply bloom shader
-    if (useShader) {
-      bool isHorizontal = true;
-      for (int i = 0; i < 50; i++) {
-        blur.setUniform("isHorizontal", isHorizontal);
-        backgroundTexture.draw(backgroundSprite, &blur);
-        isHorizontal = !isHorizontal;
-      }
-      window.draw(backgroundSprite, sf::BlendAdd);
-
-      for (int i = 0; i < 5; i++) {
-        mix.setUniform("isHorizontal", isHorizontal);
-        backgroundTexture.draw(backgroundSprite, &mix);
-        isHorizontal = !isHorizontal;
-      }
-      window.draw(backgroundSprite, sf::BlendAdd);
-    }
 
     int fps = static_cast<int>(1.f / dt);
     fpsText.setString(std::to_string(fps));
@@ -107,30 +81,30 @@ class App {
               case sf::Keyboard::Key::G:
                 particles->toggleGrid();
                 break;
-              case sf::Keyboard::Key::S:
-                useShader = !useShader;
+              case sf::Keyboard::Key::R:
+                delete particles;
+                particles = new ParticleSystem(&circleTexture);
                 break;
               default:
                 break;
             }
 
           if (event.type == sf::Event::MouseMoved)
-            mouse = sf::Vector2f{sf::Mouse::getPosition(window)};
+            mousePos = sf::Vector2f{sf::Mouse::getPosition(window)};
 
           if (event.type == sf::Event::MouseButtonReleased)
             if (event.mouseButton.button == sf::Mouse::Left)
               particles->addParticle(sf::Vector2f{sf::Mouse::getPosition(window)});
         }
 
+        dt = clock.restart().asSeconds();
+        particles->update(dt);
+
         backgroundTexture.clear();
         backgroundTexture.display();
 
         window.clear();
-
-        particles->update();
-
-        draw(clock.restart().asSeconds());
-
+        draw();
         window.display();
       }
     }

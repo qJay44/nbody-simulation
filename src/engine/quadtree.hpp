@@ -1,8 +1,8 @@
+// http://arborjs.org/docs/barnes-hut
+
 #include "../pch.h"
-#include "../preferences.h"
-#include "utils/colormap.hpp"
 #include "Particle.hpp"
-#include <vector>
+#include <list>
 
 struct Rectangle {
   // NOTE: Coords must point to the center of a rectangle
@@ -24,6 +24,15 @@ struct Rectangle {
     );
   }
 
+  bool contains(const Rectangle& r) const {
+    return (
+      r.left   >= left  &&
+      r.right  <  right &&
+      r.top    >= top   &&
+      r.bottom <  bottom
+    );
+  }
+
   bool intersects(const Rectangle& r) const {
     return !(
       top    > r.bottom ||
@@ -37,12 +46,12 @@ struct Rectangle {
 class QuadTree {
   struct GravityField {
     sf::Vector2f center;
-    double mass = 0.0001;
+    float mass;
   };
 
   GravityField gravityField;
   Rectangle boundary;
-  std::vector<const Particle*> particles;
+  std::list<const Particle*> particles;
   uint8_t depth;
   bool divided = false;
 
@@ -61,10 +70,10 @@ class QuadTree {
   }
 
   void updateGravityField(const sf::Vector2f& pos, const uint32_t& m2) {
-    double& m1 = gravityField.mass;
+    float& m1 = gravityField.mass;
     float& x = gravityField.center.x;
     float& y = gravityField.center.y;
-    double m = m1 + m2;
+    float m = m1 + m2;
 
     x = (x * m1 + pos.x * m2) / m;
     y = (y * m1 + pos.y * m2) / m;
@@ -72,6 +81,7 @@ class QuadTree {
   }
 
   void subdivide() {
+    // Aliases
     const float& x = boundary.x;
     const float& y = boundary.y;
     const float& w = boundary.w;
@@ -95,15 +105,13 @@ class QuadTree {
     }
 
     particles.clear();
-    particles.reserve(0);
     divided = true;
   }
 
   public:
     QuadTree(Rectangle boundary, uint8_t depth = 0)
       : boundary(boundary), depth(depth) {
-      particles.reserve(QUAD_TREE_CAPACITY);
-      gravityField.center = {boundary.x, boundary.y};
+      gravityField = {{boundary.x, boundary.y}, 0.f};
     }
 
     ~QuadTree() {
@@ -114,59 +122,57 @@ class QuadTree {
     }
 
     bool insert(const Particle* p) {
-      // Do not insert if particle is not within boundaries
+      // Check if particle is within boundaries
       if (!boundary.contains(p)) return false;
 
-      updateGravityField(p->getPosition(), p->getMass());
-
-      if (!divided) {
-        if (particles.size() < QUAD_TREE_CAPACITY || depth == QUAD_TREE_DEPTH) {
-          particles.push_back(p);
-          return true;
-        }
-        subdivide();
+      // 1. If this node does not contain a body or reached depth cap, put the new particle here
+      if (particles.size() < QUAD_TREE_MAX_CAPACITY || depth == QUAD_TREE_MAX_DEPTH) {
+        particles.push_back(p);
+        return true;
       }
 
-      return
-        northWest->insert(p) ||
-        northEast->insert(p) ||
-        southWest->insert(p) ||
-        southEast->insert(p);
-    }
-
-    void query(std::vector<const Particle*>& found, const Rectangle& range) {
-      if (boundary.intersects(range)) {
-        for (const Particle* p : particles)
-          if (range.contains(p))
-            found.push_back(p);
-      }
-
+      // 2. If this node is an internal node, update the gravity field.
+      // Recursively insert the partricle in the appropriate quadrant
       if (divided) {
-        northWest->query(found, range);
-        northEast->query(found, range);
-        southWest->query(found, range);
-        southEast->query(found, range);
+        updateGravityField(p->getPosition(), p->getMass());
+        return
+          northWest->insert(p) ||
+          northEast->insert(p) ||
+          southWest->insert(p) ||
+          southEast->insert(p);
+
+      // 3. If this node is an external node (which already containing other particle),
+      // subdivide the region and recursively insert these particles into the appropriate quadrants
+      } else {
+        subdivide();
+        return true;
       }
     }
 
     void solveAttraction(Particle* p1) {
-      if (divided) {
-        if (isFar(boundary.w * 2.f, distance(p1->getPosition(), gravityField.center)))
+      // 1. If this node is an external,
+      // try to calculate the force on the particle by other particle (if have any and not the same).
+      if (!divided) {
+        for (const Particle* p2 : particles)
+          if (p1 != p2)
+            p1->attract(p2->getPosition(), p2->getMass());
+
+      // 2. Otherwise, calculate the ration s/d. If s/d < θ,
+      // treat this internal node as a sinble body, and calculate the force for the particle.
+      } else if (isFar(boundary.w * 2.f, distance(p1->getPosition(), gravityField.center)))
           p1->attract(gravityField.center, gravityField.mass);
-        else {
-          northWest->solveAttraction(p1);
-          northEast->solveAttraction(p1);
-          southWest->solveAttraction(p1);
-          southEast->solveAttraction(p1);
-        }
-      } else if (particles.size() > 0) {
-          for (const Particle* p2 : particles)
-            if (p1 != p2) p1->attract(p2->getPosition(), p2->getMass());
+
+      // 3. Otherwise, run the procedure recursively for other nodes
+      else {
+        northWest->solveAttraction(p1);
+        northEast->solveAttraction(p1);
+        southWest->solveAttraction(p1);
+        southEast->solveAttraction(p1);
       }
     }
 
     void show(sf::RenderTarget& target) {
-      static sf::Color color = sf::Color(30, 30, 30);
+      static const sf::Color color = sf::Color(30, 30, 30);
 
       sf::VertexArray rect(sf::LinesStrip, 4);
       rect[0] = sf::Vertex({boundary.left , boundary.top}, color);

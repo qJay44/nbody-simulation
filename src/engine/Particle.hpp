@@ -1,6 +1,6 @@
 #include "../pch.h"
-#include "myutils.hpp"
 #include <cmath>
+#include "myutils.hpp"
 
 class Particle {
   float mass;
@@ -10,22 +10,9 @@ class Particle {
   sf::Vector2f acceleration;
   sf::VertexArray vertices{sf::Quads, 4};
 
-  inline static float magnitude(const sf::Vector2f& vec) {
-    return std::max(static_cast<float>(sqrt(vec.x * vec.x + vec.y * vec.y)), 5.f);
-  }
-
-  inline static sf::Vector2f normalize(const sf::Vector2f& vec) {
-    return vec / std::max(static_cast<float>(sqrt(vec.x * vec.x + vec.y * vec.y)), 0.0001f);
-  }
-
-  void applyForce(sf::Vector2f direction, const double& strength) {
-    acceleration.x -= (direction.x * strength) / mass;
-    acceleration.y -= (direction.y * strength) / mass;
-  }
-
-  void updatePosition() {
-    velocity += acceleration;
-    position += velocity;
+  void updatePosition(const float& dt) {
+    position += velocity * dt;
+    velocity += acceleration * dt;
     acceleration *= 0.f;
   }
 
@@ -37,20 +24,19 @@ class Particle {
   }
 
   public:
-    Particle(sf::Vector2f position, const sf::Texture* tex, float mass = INITIAL_MASS, float radius = RADIUS)
+    Particle(sf::Vector2f position, float mass = INITIAL_MASS, float radius = RADIUS)
       : position(position), mass(mass), radius(radius) {
-      float texWidght = tex->getSize().x;
-      float texHeight = tex->getSize().y;
+      static const sf::Color color = sf::Color(60, 60, 60);
 
-      vertices[0].texCoords = {0.f      , 0.f      };
-      vertices[1].texCoords = {texWidght, 0.f      };
-      vertices[2].texCoords = {texWidght, texHeight};
-      vertices[3].texCoords = {0.f      , texHeight};
+      vertices[0].texCoords = {0.f, 0.f};
+      vertices[1].texCoords = {CIRCLE_TEXTURE_SIZE, 0.f};
+      vertices[2].texCoords = {CIRCLE_TEXTURE_SIZE, CIRCLE_TEXTURE_SIZE};
+      vertices[3].texCoords = {0.f, CIRCLE_TEXTURE_SIZE};
 
-      vertices[0].color = {1, 50, 40};
-      vertices[1].color = {1, 50, 40};
-      vertices[2].color = {1, 50, 40};
-      vertices[3].color = {1, 50, 40};
+      vertices[0].color = color;
+      vertices[1].color = color;
+      vertices[2].color = color;
+      vertices[3].color = color;
     }
 
     const sf::Vector2f& getPosition() const {
@@ -65,25 +51,20 @@ class Particle {
       return vertices;
     }
 
-    void update() {
-      updatePosition();
+    void update(const float& dt) {
+      updatePosition(dt);
       updatePositionVertices();
     }
 
-    void attract(const sf::Vector2f& attractorPos, const double& attractorMass) {
-      constexpr float G = 6.67e-11;
-      sf::Vector2f v = position - attractorPos;
-      float dist = magnitude(v);
-      double strength = (G * mass * attractorMass) / (dist * dist);
+    void attract(const sf::Vector2f& attractorPos, const float& attractorMass) {
+      constexpr float distMin = 0.01f;
 
-      applyForce(normalize(v), strength);
-    }
+      sf::Vector2f v = attractorPos - position;
+      float magSq = std::max(v.x * v.x + v.y * v.y, distMin);
+      float mag = std::sqrt(magSq);
+      sf::Vector2f strength = attractorMass / (magSq * mag) * v;
 
-    void setColor(sf::Color col) {
-      vertices[0].color = col;
-      vertices[1].color = col;
-      vertices[2].color = col;
-      vertices[3].color = col;
+      acceleration += strength;
     }
 };
 
