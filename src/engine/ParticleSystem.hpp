@@ -2,8 +2,8 @@
 #include <cmath>
 
 #include <algorithm>
-#include "myutils.hpp"
 #include "quadtree.hpp"
+#include "utils/ThreadPool.h"
 
 class ParticleSystem : public sf::Drawable, public sf::Transformable {
   const sf::Texture* texture;
@@ -11,6 +11,7 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
   sf::VertexArray vertices{sf::Quads, INITIAL_PARTICLES * 4};
   Rectangle* initBoundary = nullptr;
   QuadTree* qt = nullptr;
+  ThreadPool tp;
 
   bool showGrid = false;
 
@@ -43,8 +44,20 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
   }
 
   void updateAttraction() {
-    for (Particle& particle : particles)
-      qt->solveAttraction(&particle);
+    int slice = particles.size() / tp.size();
+    for (int i = 0; i < tp.size(); i++) {
+      int begin = i * slice;
+      int end = begin + slice;
+
+      tp.queueJob([this, begin, end] { updateAttractionThreaded(begin, end); });
+    }
+
+    tp.waitForCompletion();
+  }
+
+  void updateAttractionThreaded(int begin, int end) {
+    for (int i = begin; i < end; i++)
+      qt->solveAttraction(&particles[i]);
   }
 
   void updateParticles(const float& dt) {
@@ -58,13 +71,20 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
       if (!initialized) {
         sf::Vector2f center{WIDTH / 2.f, HEIGHT / 2.f};
 
+        // Distance between each new arm;
+        double newArmArcStep = (2. * M_PI) / SPIRAL_ARMS;
+
         // Setup particles
         for (int i = 0; i < INITIAL_PARTICLES; i++) {
           sf::Vector2f pos = center;
 
-          double armStartRad = (int)(i / SPIRAL_ARM_LENGTH) * (2. * M_PI) / SPIRAL_ARMS;
-          double rad = armStartRad + i % SPIRAL_ARM_LENGTH * SPIRAL_STEP;
-          sf::Vector2f direction(cos(rad), sin(rad));
+          // A new arm will be create if current reaches its max length
+          int currentArm = i / SPIRAL_ARM_LENGTH;
+          double armStartRad = currentArm * newArmArcStep;
+
+          // Calculate position based on the start position and current iteration (particle) adjusted by "SPRIRAL_STEP"
+          double posRad = armStartRad + i % SPIRAL_ARM_LENGTH * SPIRAL_STEP;
+          sf::Vector2f direction(cos(posRad), sin(posRad));
           pos += direction * (i % SPIRAL_ARM_LENGTH * SPIRAL_OFFSET);
 
           particles.push_back(Particle(pos));
@@ -73,6 +93,8 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
         // Setup quad tree
         initBoundary = new Rectangle(center.x, center.y, center.x, center.y);
         qt = new QuadTree(*initBoundary);
+
+        tp.start();
 
         initialized = true;
       }

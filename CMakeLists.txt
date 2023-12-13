@@ -16,6 +16,7 @@ find_package(SFML 2.6.0 COMPONENTS system window graphics REQUIRED)
 include_directories(${MY_UTILS_PATH})
 
 add_executable(MyProject
+  ${SRC_DIR}engine/utils/ThreadPool.cpp
   ${SRC_DIR}main.cpp
 )
 

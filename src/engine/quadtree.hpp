@@ -24,15 +24,6 @@ struct Rectangle {
     );
   }
 
-  bool contains(const Rectangle& r) const {
-    return (
-      r.left   >= left  &&
-      r.right  <  right &&
-      r.top    >= top   &&
-      r.bottom <  bottom
-    );
-  }
-
   bool intersects(const Rectangle& r) const {
     return !(
       top    > r.bottom ||
@@ -66,7 +57,7 @@ class QuadTree {
   }
 
   inline static bool isFar(float s, float dd) {
-    return (s * s) / dd < QUAD_TREE_THETA;
+    return (s * s) / dd < QUAD_TREE_THETA_SQ;
   }
 
   void updateGravityField(const sf::Vector2f& pos, const uint32_t& m2) {
@@ -160,7 +151,7 @@ class QuadTree {
       // 2. Otherwise, calculate the ration s/d. If s/d < θ,
       // treat this internal node as a single body, and calculate the force for the particle.
       } else if (isFar(boundary.w * 2.f, distanceSq(p1->getPosition(), gravityField.center)))
-          p1->attract(gravityField.center, gravityField.mass);
+        p1->attract(gravityField.center, gravityField.mass);
 
       // 3. Otherwise, run the procedure recursively for other nodes
       else {

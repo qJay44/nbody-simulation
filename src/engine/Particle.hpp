@@ -1,4 +1,5 @@
 #include "../pch.h"
+#include "qrsqrt.hpp"
 #include <cmath>
 
 class Particle {
@@ -25,7 +26,7 @@ class Particle {
   public:
     Particle(sf::Vector2f position, float mass = INITIAL_MASS, float radius = RADIUS)
       : position(position), mass(mass), radius(radius) {
-      static const sf::Color color = sf::Color(19, 29, 49);
+      static const sf::Color color = sf::Color(5, 15, 25, 100);
 
       vertices[0].texCoords = {0.f, 0.f};
       vertices[1].texCoords = {CIRCLE_TEXTURE_SIZE, 0.f};
@@ -56,15 +57,14 @@ class Particle {
     }
 
     void attract(const sf::Vector2f& attractorPos, const float& attractorMass) {
-      // Constrain high acceleration at tiny distance between particles
+      // Constrain high acceleration at tiny distances between particles
       constexpr float distMin = 0.1f;
 
       sf::Vector2f v = attractorPos - position;
       float magSq = std::max(v.x * v.x + v.y * v.y, distMin);
       float mag = std::sqrt(magSq);
-      sf::Vector2f strength = attractorMass / (magSq * mag) * v;
 
-      acceleration += strength;
+      acceleration += attractorMass / (magSq * mag) * v;
     }
 };
 
