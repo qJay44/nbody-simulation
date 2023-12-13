@@ -1,5 +1,4 @@
 #include "../pch.h"
-#include "qrsqrt.hpp"
 #include <cmath>
 
 class Particle {

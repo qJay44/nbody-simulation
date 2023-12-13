@@ -1,5 +1,6 @@
 #include "myutils.hpp"
 #include "engine/ParticleSystem.hpp"
+#include <string>
 
 class App {
   sf::RenderWindow window;
@@ -14,10 +15,11 @@ class App {
 
   ParticleSystem* particles;
   float dt;
+  bool showFPS = true;
 
   void setupSFML() {
     // Setup main window
-    window.create(sf::VideoMode(WIDTH, HEIGHT), "Template text", sf::Style::Close);
+    window.create(sf::VideoMode(WIDTH, HEIGHT), "NBody simulation", sf::Style::Close);
     window.setFramerateLimit(90);
 
     // Font for some test text
@@ -42,16 +44,18 @@ class App {
   }
 
   void setupProgram() {
-    particles = new ParticleSystem(&circleTexture);
+    particles = new ParticleSystem(&circleTexture, &genericFont);
   }
 
   void draw() {
     backgroundTexture.draw(*particles);
     window.draw(backgroundSprite);
 
-    int fps = static_cast<int>(1.f / dt);
-    fpsText.setString(std::to_string(fps));
-    window.draw(fpsText);
+    if (showFPS) {
+      int fps = static_cast<int>(1.f / dt);
+      fpsText.setString(std::to_string(fps));
+      window.draw(fpsText);
+    }
   }
 
   public:
@@ -82,8 +86,13 @@ class App {
                 particles->toggleGrid();
                 break;
               case sf::Keyboard::Key::R:
-                delete particles;
-                particles = new ParticleSystem(&circleTexture);
+                delete particles; particles = new ParticleSystem(&circleTexture, &genericFont);
+                break;
+              case sf::Keyboard::Key::F:
+                showFPS = !showFPS;
+                break;
+              case sf::Keyboard::Key::T:
+                particles->toggleTimer();
                 break;
               default:
                 break;
