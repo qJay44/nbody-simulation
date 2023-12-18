@@ -26,6 +26,6 @@ class RuntimeOpenCL {
     ~RuntimeOpenCL();
 
     void run(const float& dt);
-    const cl_float4* getCurrentParticlesPtr() const; // The content changes after every "run()" call
+    const cl_float4* getComputedParticlesPtr() const;
 };
 

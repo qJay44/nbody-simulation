@@ -1,3 +1,5 @@
+// https://github.com/CobaltXII/cosmos/blob/master/cosmos_simulate.cpp
+
 #include <cassert>
 #include <string>
 
@@ -87,17 +89,17 @@ RuntimeOpenCL::RuntimeOpenCL(const std::vector<Particle>& particles) : n(particl
   commandQueue = clCreateCommandQueueWithProperties(context, device, 0, &commandQueueResult);
   assert(commandQueueResult == CL_SUCCESS);
 
-  currentParticles = new cl_float4[n * sizeof(cl_float4)];
-  nextParticles = new cl_float4[n * sizeof(cl_float4)];
+  currentParticles = new cl_float4[n];
+  nextParticles = new cl_float4[n];
 
   for (int i = 0; i < n; i++) {
     const Particle& p = particles[i];
-    cl_float4& clP = currentParticles[i];
-
-    clP.x = p.getPosition().x;
-    clP.y = p.getPosition().y;
-    clP.z = p.getVelocity().x;
-    clP.w = p.getVelocity().y;
+    currentParticles[i] = {
+      p.getPosition().x,
+      p.getPosition().y,
+      p.getVelocity().x,
+      p.getVelocity().y
+    };
   }
 
   // Clear the second state (fill the array with zeros).
@@ -111,7 +113,7 @@ RuntimeOpenCL::RuntimeOpenCL(const std::vector<Particle>& particles) : n(particl
   cl_int cpuCopyResult1;
   cl_int cpuCopyResult2;
   cpuCopyResult1 = clEnqueueWriteBuffer(commandQueue, gpuCurrentParticles, CL_TRUE, 0, n * sizeof(cl_float4), currentParticles, 0, nullptr, nullptr);
-  cpuCopyResult2 = clEnqueueWriteBuffer(commandQueue, gpuCurrentParticles, CL_TRUE, 0, n * sizeof(cl_float4), nextParticles, 0, nullptr, nullptr);
+  cpuCopyResult2 = clEnqueueWriteBuffer(commandQueue, gpuNextParticles,    CL_TRUE, 0, n * sizeof(cl_float4), nextParticles, 0, nullptr, nullptr);
   assert(cpuCopyResult1 == CL_SUCCESS);
   assert(cpuCopyResult2 == CL_SUCCESS);
 
@@ -154,7 +156,7 @@ void RuntimeOpenCL::run(const float& dt) {
   static const size_t globalWorkSize = n;
   static const size_t localWorkSize = maxLocalSize;
 
-  clSetKernelArg(kernel, 0, sizeof(float) , &dt);
+  clSetKernelArg(kernel, 0, sizeof(cl_float), &dt);
   clSetKernelArg(kernel, 2, sizeof(cl_mem), &gpuCurrentParticles);
   clSetKernelArg(kernel, 3, sizeof(cl_mem), &gpuNextParticles);
 
@@ -166,7 +168,7 @@ void RuntimeOpenCL::run(const float& dt) {
   clFinish(commandQueue);
 }
 
-const cl_float4* RuntimeOpenCL::getCurrentParticlesPtr() const {
-  return currentParticles;
+const cl_float4* RuntimeOpenCL::getComputedParticlesPtr() const {
+  return nextParticles;
 }
 

@@ -17,7 +17,7 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
 
   bool showTimer = false;
   bool showGrid = false;
-  bool useGpu = false;
+  bool useGpu = true;
 
   // Functions time execution in seconds
   sf::Text timerText;
@@ -42,8 +42,6 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
   }
 
   void updateQuadTree() {
-    if (useGpu) return;
-
     timer.restart();
 
     delete qt; qt = new QuadTree(*initBoundary);
@@ -53,26 +51,17 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
     t_qt = timer.restart().asSeconds();
   }
 
-  void updateAttraction(const float& dt) {
+  void updateAttraction() {
     timer.restart();
 
-    if (useGpu) {
-      static const cl_float4* clParticlesPtr = gpuCalc->getCurrentParticlesPtr();
-      gpuCalc->run(dt);
+    int slice = particles.size() / tp.size();
+    for (int i = 0; i < tp.size(); i++) {
+      int begin = i * slice;
+      int end = begin + slice;
 
-      for (int i = 0; i < particles.size(); i++)
-        particles[i].update(clParticlesPtr->x, clParticlesPtr->y);
-
-    } else {
-      int slice = particles.size() / tp.size();
-      for (int i = 0; i < tp.size(); i++) {
-        int begin = i * slice;
-        int end = begin + slice;
-
-        tp.queueJob([this, begin, end] { updateAttractionThreaded(begin, end); });
-      }
-      tp.waitForCompletion();
+      tp.queueJob([this, begin, end] { updateAttractionThreaded(begin, end); });
     }
+    tp.waitForCompletion();
 
     t_attraction = timer.restart().asSeconds();
   }
@@ -82,9 +71,19 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
       qt->solveAttraction(&particles[i]);
   }
 
-  void updateParticles(const float& dt) {
-    if (useGpu) return;
+  void updateAttractionGpu(const float& dt) {
+    timer.restart();
 
+    static const cl_float4* clParticlesPtr = gpuCalc->getComputedParticlesPtr();
+    gpuCalc->run(dt);
+
+    for (int i = 0; i < particles.size(); i++)
+      particles[i].update(clParticlesPtr[i].x, clParticlesPtr[i].y);
+
+    t_attraction = timer.restart().asSeconds();
+  }
+
+  void updateParticles(const float& dt) {
     timer.restart();
 
     for (Particle& p : particles)
@@ -109,9 +108,11 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
   }
 
   void updateTimerText() {
-    std::string text("Update time:\n\n");
-    text += "quad tree:  " + std::to_string(t_qt) + "\n";
-    text += "attraction: " + std::to_string(t_attraction) + "\n";
+    std::string mode = useGpu ? "GPU mode" : "CPU mode";
+    std::string text("Update time ");
+    text += "(" + mode + "):\n\n";
+    text += "quad tree:  "  + std::to_string(t_qt) + "\n";
+    text += "attraction: "  + std::to_string(t_attraction) + "\n";
     text += "particles:   " + std::to_string(t_particles) + "\n";
     text += "vertices:    " + std::to_string(t_vertices);
 
@@ -166,7 +167,9 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
       tp.stop();
     }
 
+    // TODO: Update particles in gpu memory?
     void addParticle(sf::Vector2f pos) {
+      return;
       particles.push_back(Particle(pos, 200.f, 5.f));
       vertices.resize(particles.size() * 4);
     }
@@ -176,10 +179,15 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
     void toggleGpuMode()  { useGpu = !useGpu; }
 
     void update(const float& dt) {
-      updateQuadTree();
-      updateAttraction(dt);
-      updateParticles(dt);
-      updateVertices();
+      if (useGpu) {
+        updateAttractionGpu(dt);
+        updateVertices();
+      } else {
+        updateQuadTree();
+        updateAttraction();
+        updateParticles(dt);
+        updateVertices();
+      }
       updateTimerText();
     }
 };

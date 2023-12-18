@@ -16,7 +16,7 @@ class Particle {
     acceleration *= 0.f;
   }
 
-  void updatePosition(const float& x, const float& y) {
+  void updatePosition(float x, float y) {
     position = {x, y};
   }
 
@@ -64,7 +64,7 @@ class Particle {
       updatePositionVertices();
     }
 
-    void update(const float& x, const float& y) {
+    void update(float x, float y) {
       updatePosition(x, y);
       updatePositionVertices();
     }
