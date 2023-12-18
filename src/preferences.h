@@ -12,6 +12,6 @@
 #define SPIRAL_STEP 0.0015f   // Distance between each created particle
 #define SPIRAL_OFFSET 0.125f  // Offest between spiral arms
 
-#define QUAD_TREE_MAX_DEPTH 0xfff
+#define QUAD_TREE_MAX_DEPTH 0xff
 #define QUAD_TREE_MAX_CAPACITY 1
 #define QUAD_TREE_THETA_SQ 0.25f

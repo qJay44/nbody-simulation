@@ -94,6 +94,9 @@ class App {
               case sf::Keyboard::Key::T:
                 particles->toggleTimer();
                 break;
+              case sf::Keyboard::Key::A:
+                particles->toggleGpuMode();
+                break;
               default:
                 break;
             }

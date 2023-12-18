@@ -2,6 +2,7 @@
 #include <cmath>
 
 #include "quadtree.hpp"
+#include "opencl-bruteforce/RuntimeOpenCL.hpp"
 #include "utils/ThreadPool.h"
 
 class ParticleSystem : public sf::Drawable, public sf::Transformable {
@@ -12,8 +13,11 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
   QuadTree* qt = nullptr;
   ThreadPool tp;
 
+  RuntimeOpenCL* gpuCalc = nullptr;
+
   bool showTimer = false;
   bool showGrid = false;
+  bool useGpu = false;
 
   // Functions time execution in seconds
   sf::Text timerText;
@@ -38,6 +42,8 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
   }
 
   void updateQuadTree() {
+    if (useGpu) return;
+
     timer.restart();
 
     delete qt; qt = new QuadTree(*initBoundary);
@@ -47,18 +53,26 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
     t_qt = timer.restart().asSeconds();
   }
 
-  void updateAttraction() {
+  void updateAttraction(const float& dt) {
     timer.restart();
 
-    int slice = particles.size() / tp.size();
-    for (int i = 0; i < tp.size(); i++) {
-      int begin = i * slice;
-      int end = begin + slice;
+    if (useGpu) {
+      static const cl_float4* clParticlesPtr = gpuCalc->getCurrentParticlesPtr();
+      gpuCalc->run(dt);
 
-      tp.queueJob([this, begin, end] { updateAttractionThreaded(begin, end); });
+      for (int i = 0; i < particles.size(); i++)
+        particles[i].update(clParticlesPtr->x, clParticlesPtr->y);
+
+    } else {
+      int slice = particles.size() / tp.size();
+      for (int i = 0; i < tp.size(); i++) {
+        int begin = i * slice;
+        int end = begin + slice;
+
+        tp.queueJob([this, begin, end] { updateAttractionThreaded(begin, end); });
+      }
+      tp.waitForCompletion();
     }
-
-    tp.waitForCompletion();
 
     t_attraction = timer.restart().asSeconds();
   }
@@ -69,6 +83,8 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
   }
 
   void updateParticles(const float& dt) {
+    if (useGpu) return;
+
     timer.restart();
 
     for (Particle& p : particles)
@@ -138,12 +154,15 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
       timerText.setLineSpacing(1.25f);
       timerText.setLetterSpacing(2.f);
 
+      gpuCalc = new RuntimeOpenCL(particles);
+
       tp.start();
     }
 
     ~ParticleSystem() {
       delete initBoundary;
       delete qt;
+      delete gpuCalc;
       tp.stop();
     }
 
@@ -152,12 +171,13 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
       vertices.resize(particles.size() * 4);
     }
 
-    void toggleGrid()  { showGrid = !showGrid; }
-    void toggleTimer() { showTimer = !showTimer; }
+    void toggleGrid()     { showGrid = !showGrid; }
+    void toggleTimer()    { showTimer = !showTimer; }
+    void toggleGpuMode()  { useGpu = !useGpu; }
 
     void update(const float& dt) {
       updateQuadTree();
-      updateAttraction();
+      updateAttraction(dt);
       updateParticles(dt);
       updateVertices();
       updateTimerText();

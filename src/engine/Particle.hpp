@@ -1,3 +1,4 @@
+#pragma once
 #include "../pch.h"
 #include <cmath>
 
@@ -13,6 +14,10 @@ class Particle {
     position += velocity * dt;
     velocity += acceleration * dt;
     acceleration *= 0.f;
+  }
+
+  void updatePosition(const float& x, const float& y) {
+    position = {x, y};
   }
 
   void updatePositionVertices() {
@@ -42,6 +47,10 @@ class Particle {
       return position;
     }
 
+    const sf::Vector2f& getVelocity() const {
+      return velocity;
+    }
+
     const float& getMass() const {
       return mass;
     }
@@ -52,6 +61,11 @@ class Particle {
 
     void update(const float& dt) {
       updatePosition(dt);
+      updatePositionVertices();
+    }
+
+    void update(const float& x, const float& y) {
+      updatePosition(x, y);
       updatePositionVertices();
     }
 

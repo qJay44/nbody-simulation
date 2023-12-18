@@ -1,3 +1,6 @@
+@echo off
+clear
+
 Rem Build
 if not exist Build\Release mkdir Build\Release
 cd Build\Release

@@ -18,8 +18,13 @@ include_directories(${MY_UTILS_PATH})
 add_executable(MyProject
   ${SRC_DIR}engine/utils/ThreadPool.cpp
   ${SRC_DIR}main.cpp
+  ${SRC_DIR}engine/opencl-bruteforce/RuntimeOpenCL.cpp
 )
 
 target_precompile_headers(${PROJECT_NAME} PUBLIC ${SRC_DIR}pch.h)
-target_link_libraries(MyProject sfml-system sfml-window sfml-graphics)
+
+target_include_directories(MyProject PUBLIC ${OPENCL_PATH}/include)
+target_link_directories(MyProject PUBLIC ${OPENCL_PATH}/lib/x86)
+target_link_libraries(MyProject sfml-system sfml-window sfml-graphics OpenCL)
+
 
