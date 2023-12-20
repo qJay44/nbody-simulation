@@ -103,10 +103,6 @@ class App {
 
           if (event.type == sf::Event::MouseMoved)
             mousePos = sf::Vector2f{sf::Mouse::getPosition(window)};
-
-          if (event.type == sf::Event::MouseButtonReleased)
-            if (event.mouseButton.button == sf::Mouse::Left)
-              particles->addParticle(sf::Vector2f{sf::Mouse::getPosition(window)});
         }
 
         dt = clock.restart().asSeconds();

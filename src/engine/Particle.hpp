@@ -28,9 +28,8 @@ class Particle {
   }
 
   public:
-    Particle(sf::Vector2f position, float mass = INITIAL_MASS, float radius = RADIUS)
+    Particle(sf::Vector2f position, float mass = INITIAL_MASS, float radius = RADIUS, sf::Color color = {15, 25, 35, 150})
       : position(position), mass(mass), radius(radius) {
-      static const sf::Color color = sf::Color(5, 15, 25, 100);
 
       vertices[0].texCoords = {0.f, 0.f};
       vertices[1].texCoords = {CIRCLE_TEXTURE_SIZE, 0.f};

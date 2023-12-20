@@ -4,6 +4,8 @@
 #include "quadtree.hpp"
 #include "opencl-bruteforce/RuntimeOpenCL.hpp"
 #include "utils/ThreadPool.h"
+#include "utils/colormap.hpp"
+#include "myutils.hpp"
 
 class ParticleSystem : public sf::Drawable, public sf::Transformable {
   const sf::Texture* texture;
@@ -17,7 +19,7 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
 
   bool showTimer = false;
   bool showGrid = false;
-  bool useGpu = true;
+  bool useGpu = false;
 
   // Functions time execution in seconds
   sf::Text timerText;
@@ -74,7 +76,7 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
   void updateAttractionGpu(const float& dt) {
     timer.restart();
 
-    static const cl_float4* clParticlesPtr = gpuCalc->getComputedParticlesPtr();
+    const cl_float4* clParticlesPtr = gpuCalc->getComputedParticlesPtr();
     gpuCalc->run(dt);
 
     for (int i = 0; i < particles.size(); i++)
@@ -122,24 +124,19 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
   public:
     ParticleSystem(const sf::Texture* texture, const sf::Font* font) : texture(texture) {
       sf::Vector2f center{WIDTH / 2.f, HEIGHT / 2.f};
+      double stepRad = (2. * M_PI) / SPIRAL_ARMS;
 
-      // Distance between each new arm;
-      double newArmArcStep = (2. * M_PI) / SPIRAL_ARMS;
-
-      // Setup particles
-      for (int i = 0; i < INITIAL_PARTICLES; i++) {
-        sf::Vector2f pos = center;
-
-        // A new arm will be create if current reaches its max length
-        int currentArm = i / SPIRAL_ARM_LENGTH;
-        double armStartRad = currentArm * newArmArcStep;
-
-        // Calculate position based on the start position and current iteration (particle) adjusted by "SPRIRAL_STEP"
-        double posRad = armStartRad + i % SPIRAL_ARM_LENGTH * SPIRAL_STEP;
-        sf::Vector2f direction(cos(posRad), sin(posRad));
-        pos += direction * (i % SPIRAL_ARM_LENGTH * SPIRAL_OFFSET);
-
-        particles.push_back(Particle(pos));
+      for (int i = 0; i < SPIRAL_ARMS; i++) {
+        double startRad = i * stepRad;
+        for (int j = 0; j < SPIRAL_ARMS_WIDTH; j++) {
+          double startArmRad = j * M_PI / SPIRAL_ARMS_WIDTH_VALUE / SPIRAL_ARMS_WIDTH;
+          for (int k = 0; k < SPIRAL_ARM_LENGTH; k++) {
+            sf::Vector2f pos = center;
+            double rad = startRad + startArmRad + k * M_PI / SPIRAL_ARM_TWIST_VALUE;
+            pos += sf::Vector2f(cos(rad) * k, sin(rad) * k);
+            particles.push_back(Particle(pos));
+          }
+        }
       }
 
       // Setup quad tree
@@ -167,16 +164,9 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
       tp.stop();
     }
 
-    // TODO: Update particles in gpu memory?
-    void addParticle(sf::Vector2f pos) {
-      return;
-      particles.push_back(Particle(pos, 200.f, 5.f));
-      vertices.resize(particles.size() * 4);
-    }
-
-    void toggleGrid()     { showGrid = !showGrid; }
-    void toggleTimer()    { showTimer = !showTimer; }
-    void toggleGpuMode()  { useGpu = !useGpu; }
+    void toggleGrid()    { showGrid = !showGrid; }
+    void toggleTimer()   { showTimer = !showTimer; }
+    void toggleGpuMode() { useGpu = !useGpu; }
 
     void update(const float& dt) {
       if (useGpu) {
