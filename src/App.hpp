@@ -1,5 +1,6 @@
 #include "myutils.hpp"
 #include "engine/ParticleSystem.hpp"
+#include "engine/utils/colormap.hpp"
 #include <string>
 
 class App {
@@ -12,6 +13,7 @@ class App {
   sf::RenderTexture backgroundTexture;
   sf::Sprite backgroundSprite;
   sf::Texture circleTexture;
+  sf::Shader shader;
 
   ParticleSystem* particles;
   float dt;
@@ -41,6 +43,10 @@ class App {
     circleTexture.loadFromFile("../../src/res/circle.png");
     circleTexture.generateMipmap();
     circleTexture.setSmooth(true);
+
+    shader.loadFromFile("../../src/engine/utils/colormap.frag", sf::Shader::Fragment);
+    shader.setUniform("texture", backgroundTexture.getTexture());
+    shader.setUniformArray("colormap", colormap, 256);
   }
 
   void setupProgram() {
@@ -49,7 +55,7 @@ class App {
 
   void draw() {
     backgroundTexture.draw(*particles);
-    window.draw(backgroundSprite);
+    window.draw(backgroundSprite, &shader);
 
     if (showFPS) {
       int fps = static_cast<int>(1.f / dt);

@@ -4,7 +4,6 @@
 #include "quadtree.hpp"
 #include "opencl-bruteforce/RuntimeOpenCL.hpp"
 #include "utils/ThreadPool.h"
-#include "utils/colormap.hpp"
 #include "myutils.hpp"
 
 class ParticleSystem : public sf::Drawable, public sf::Transformable {

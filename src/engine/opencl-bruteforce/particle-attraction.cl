@@ -1,4 +1,4 @@
-__kernel void attraction(float dt, int n, __global float4* before, __global float4* after) {
+__kernel void attraction(float dt, const int n, __global float4* before, __global float4* after) {
   int globalId = get_global_id(0);
   float4 p1 = before[globalId];
 
@@ -20,8 +20,8 @@ __kernel void attraction(float dt, int n, __global float4* before, __global floa
   }
 
   // Calculate velocity
-  p1.z += accelerationX * dt;
-  p1.w += accelerationY * dt;
+  p1.z += accelerationX * dt * 0.01f;
+  p1.w += accelerationY * dt * 0.01f;
 
   // Add velocity to the position
   p1.x += p1.z;
