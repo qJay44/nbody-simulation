@@ -4,7 +4,6 @@
 #include <string>
 
 #include "RuntimeOpenCL.hpp"
-#include "myutils.hpp"
 
 #define ATTRIBUTE_COUNT 5
 

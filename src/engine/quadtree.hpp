@@ -1,6 +1,5 @@
 // http://arborjs.org/docs/barnes-hut
 
-#include "../pch.h"
 #include "Particle.hpp"
 #include <list>
 
@@ -34,7 +33,7 @@ struct Rectangle {
   }
 };
 
-class QuadTree {
+class Node {
   struct GravityField {
     sf::Vector2f center;
     float mass;
@@ -46,10 +45,10 @@ class QuadTree {
   uint8_t depth;
   bool divided = false;
 
-  QuadTree* northWest = nullptr;
-  QuadTree* northEast = nullptr;
-  QuadTree* southWest = nullptr;
-  QuadTree* southEast = nullptr;
+  Node* northWest = nullptr;
+  Node* northEast = nullptr;
+  Node* southWest = nullptr;
+  Node* southEast = nullptr;
 
   inline static float distanceSq(const sf::Vector2f& v1, const sf::Vector2f& v2) {
     sf::Vector2f v = v1 - v2;
@@ -72,21 +71,20 @@ class QuadTree {
   }
 
   void subdivide() {
-    // Aliases
     const float& x = boundary.x;
     const float& y = boundary.y;
-    const float& w = boundary.w;
-    const float& h = boundary.h;
+    float wHalf = boundary.w * 0.5f;
+    float hHalf = boundary.h * 0.5f;
 
-    Rectangle nwRect(x - w / 2, y - h / 2, w / 2, h / 2);
-    Rectangle neRect(x + w / 2, y - h / 2, w / 2, h / 2);
-    Rectangle swRect(x - w / 2, y + h / 2, w / 2, h / 2);
-    Rectangle seRect(x + w / 2, y + h / 2, w / 2, h / 2);
+    Rectangle nwRect(x - wHalf, y - hHalf, wHalf, hHalf);
+    Rectangle neRect(x + wHalf, y - hHalf, wHalf, hHalf);
+    Rectangle swRect(x - wHalf, y + hHalf, wHalf, hHalf);
+    Rectangle seRect(x + wHalf, y + hHalf, wHalf, hHalf);
 
-    northWest = new QuadTree(nwRect, depth + 1);
-    northEast = new QuadTree(neRect, depth + 1);
-    southWest = new QuadTree(swRect, depth + 1);
-    southEast = new QuadTree(seRect, depth + 1);
+    northWest = new Node(nwRect, depth + 1);
+    northEast = new Node(neRect, depth + 1);
+    southWest = new Node(swRect, depth + 1);
+    southEast = new Node(seRect, depth + 1);
 
     for (const Particle* p : particles) {
       northWest->insert(p) ||
@@ -100,12 +98,12 @@ class QuadTree {
   }
 
   public:
-    QuadTree(Rectangle boundary, uint8_t depth = 0)
+    Node(Rectangle boundary, uint8_t depth = 0)
       : boundary(boundary), depth(depth) {
       gravityField = {{boundary.x, boundary.y}, 0.f};
     }
 
-    ~QuadTree() {
+    ~Node() {
       delete northWest;
       delete northEast;
       delete southWest;
@@ -162,7 +160,7 @@ class QuadTree {
       }
     }
 
-    void show(sf::RenderTarget& target) {
+    void show(sf::RenderTarget& target, const uint8_t& limit) {
       static const sf::Color color = sf::Color(30, 30, 30);
 
       sf::VertexArray rect(sf::LinesStrip, 4);
@@ -172,11 +170,11 @@ class QuadTree {
       rect[3] = sf::Vertex({boundary.left , boundary.bottom}, color);
       target.draw(rect);
 
-      if (divided) {
-        northWest->show(target);
-        northEast->show(target);
-        southWest->show(target);
-        southEast->show(target);
+      if (divided && depth <= limit) {
+        northWest->show(target, limit);
+        northEast->show(target, limit);
+        southWest->show(target, limit);
+        southEast->show(target, limit);
       }
     }
 };

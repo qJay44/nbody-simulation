@@ -11,20 +11,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 project(MyProject VERSION 1.0)
 
-find_package(SFML 2.6.0 COMPONENTS system window graphics REQUIRED)
+file(GLOB_RECURSE SOURCES ${PROJECT_SOURCE_DIR}/src/*.cpp)
+add_executable(${PROJECT_NAME} ${SOURCES})
 
-include_directories(${MY_UTILS_PATH})
+target_precompile_headers(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/src/pch.h)
 
-add_executable(MyProject
-  ${SRC_DIR}engine/utils/ThreadPool.cpp
-  ${SRC_DIR}main.cpp
-  ${SRC_DIR}engine/opencl-bruteforce/RuntimeOpenCL.cpp
-)
+target_include_directories(${PROJECT_NAME} PUBLIC ${SFML_PATH}/include)
+target_include_directories(${PROJECT_NAME} PUBLIC ${OPENCL_PATH}/include)
 
-target_precompile_headers(${PROJECT_NAME} PUBLIC ${SRC_DIR}pch.h)
-
-target_include_directories(MyProject PUBLIC ${OPENCL_PATH}/include)
-target_link_directories(MyProject PUBLIC ${OPENCL_PATH}/lib/x86)
-target_link_libraries(MyProject sfml-system sfml-window sfml-graphics OpenCL)
-
+target_link_directories(${PROJECT_NAME} PUBLIC ${SFML_PATH}/lib)
+target_link_directories(${PROJECT_NAME} PUBLIC ${OPENCL_PATH}/lib/x86_64)
+target_link_libraries(${PROJECT_NAME} sfml-system sfml-window sfml-graphics OpenCL)
 

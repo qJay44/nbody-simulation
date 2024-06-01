@@ -1,4 +1,3 @@
-#include "myutils.hpp"
 #include "engine/ParticleSystem.hpp"
 #include "engine/utils/colormap.hpp"
 #include <string>
@@ -17,6 +16,8 @@ class App {
 
   ParticleSystem* particles;
   float dt;
+  bool showTimer = false;
+  bool showGrid = false;
   bool showFPS = true;
 
   void setupSFML() {
@@ -57,6 +58,12 @@ class App {
     backgroundTexture.draw(*particles);
     window.draw(backgroundSprite, &shader);
 
+    if (showGrid)
+      particles->drawGrid(window, 7);
+
+    if (showTimer)
+      window.draw(particles->getTimerText(), sf::RenderStates());
+
     if (showFPS) {
       int fps = static_cast<int>(1.f / dt);
       fpsText.setString(std::to_string(fps));
@@ -89,7 +96,7 @@ class App {
                 window.close();
                 break;
               case sf::Keyboard::Key::G:
-                particles->toggleGrid();
+                showGrid = !showGrid;
                 break;
               case sf::Keyboard::Key::R:
                 delete particles; particles = new ParticleSystem(&circleTexture, &genericFont);
@@ -98,7 +105,7 @@ class App {
                 showFPS = !showFPS;
                 break;
               case sf::Keyboard::Key::T:
-                particles->toggleTimer();
+                showTimer = !showTimer;
                 break;
               case sf::Keyboard::Key::A:
                 particles->toggleGpuMode();

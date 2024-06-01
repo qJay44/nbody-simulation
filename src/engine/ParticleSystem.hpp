@@ -4,20 +4,16 @@
 #include "quadtree.hpp"
 #include "opencl-bruteforce/RuntimeOpenCL.hpp"
 #include "utils/ThreadPool.h"
-#include "myutils.hpp"
 
 class ParticleSystem : public sf::Drawable, public sf::Transformable {
   const sf::Texture* texture;
   std::vector<Particle> particles;
   sf::VertexArray vertices{sf::Quads, INITIAL_PARTICLES * 4};
   Rectangle* initBoundary = nullptr;
-  QuadTree* qt = nullptr;
+  Node* qt = nullptr;
   ThreadPool tp;
 
   RuntimeOpenCL* gpuCalc = nullptr;
-
-  bool showTimer = false;
-  bool showGrid = false;
   bool useGpu = false;
 
   // Functions time execution in seconds
@@ -29,23 +25,17 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
   float t_vertices;
 
   virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const {
-    if (showGrid)
-      qt->show(target);
-
     states.transform *= getTransform();
     states.texture = texture;
     states.blendMode = sf::BlendAdd;
 
     target.draw(vertices, states);
-
-    if (showTimer)
-      target.draw(timerText);
   }
 
   void updateQuadTree() {
     timer.restart();
 
-    delete qt; qt = new QuadTree(*initBoundary);
+    delete qt; qt = new Node(*initBoundary);
     for (const Particle& particle : particles)
       qt->insert(&particle);
 
@@ -140,7 +130,7 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
 
       // Setup quad tree
       initBoundary = new Rectangle(center.x, center.y, center.x, center.y);
-      qt = new QuadTree(*initBoundary);
+      qt = new Node(*initBoundary);
 
       // Timer text setup
       timerText.setString("sample long name: 0.00000000");
@@ -163,8 +153,6 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
       tp.stop();
     }
 
-    void toggleGrid()    { showGrid = !showGrid; }
-    void toggleTimer()   { showTimer = !showTimer; }
     void toggleGpuMode() { useGpu = !useGpu; }
 
     void update(const float& dt) {
@@ -178,6 +166,14 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
         updateVertices();
       }
       updateTimerText();
+    }
+
+    void drawGrid(sf::RenderTarget& target, const uint8_t& limit = QUAD_TREE_MAX_DEPTH) const {
+      qt->show(target, limit);
+    }
+
+    const sf::Text& getTimerText() const {
+      return timerText;
     }
 };
 
