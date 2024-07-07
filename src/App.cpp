@@ -57,9 +57,6 @@ void App::run() {
           case sf::Keyboard::Key::F:
             showFPS = !showFPS;
             break;
-          case sf::Keyboard::Key::T:
-            showTimer = !showTimer;
-            break;
           case sf::Keyboard::Key::A:
             particles->toggleGpuMode();
             break;
@@ -89,9 +86,6 @@ void App::draw() {
 
   if (showGrid)
     particles->drawGrid(window, 7);
-
-  if (showTimer)
-    window.draw(particles->getTimerText(), sf::RenderStates());
 
   if (showFPS) {
     int fps = static_cast<int>(1.f / dt);

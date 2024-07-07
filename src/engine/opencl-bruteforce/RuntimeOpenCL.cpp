@@ -104,10 +104,12 @@ RuntimeOpenCL::RuntimeOpenCL(const std::vector<Particle>& particles) : n(particl
   // Clear the second state (fill the array with zeros).
 	memset(nextParticles, 0, n * sizeof(cl_float4));
 
-  cl_int gpuMallocResult;
-  gpuCurrentParticles = clCreateBuffer(context, CL_MEM_READ_WRITE, n * sizeof(cl_float4), nullptr, &gpuMallocResult);
-  gpuNextParticles    = clCreateBuffer(context, CL_MEM_READ_WRITE, n * sizeof(cl_float4), nullptr, &gpuMallocResult);
-  assert(gpuMallocResult == CL_SUCCESS);
+  cl_int gpuMallocResult1;
+  cl_int gpuMallocResult2;
+  gpuCurrentParticles = clCreateBuffer(context, CL_MEM_READ_WRITE, n * sizeof(cl_float4), nullptr, &gpuMallocResult1);
+  gpuNextParticles    = clCreateBuffer(context, CL_MEM_READ_WRITE, n * sizeof(cl_float4), nullptr, &gpuMallocResult2);
+  assert(gpuMallocResult1 == CL_SUCCESS);
+  assert(gpuMallocResult2 == CL_SUCCESS);
 
   cl_int cpuCopyResult1;
   cl_int cpuCopyResult2;
@@ -117,7 +119,7 @@ RuntimeOpenCL::RuntimeOpenCL(const std::vector<Particle>& particles) : n(particl
   assert(cpuCopyResult2 == CL_SUCCESS);
 
   cl_int programResult;
-  std::string clFile = readFromFile("../../src/engine/opencl-bruteforce/particle-attraction.cl");
+  std::string clFile = readFromFile("res/cl/particle-attraction.cl");
   const char* programSource = clFile.c_str();
   size_t programSourceLength = 0;
   program = clCreateProgramWithSource(context, 1, &programSource, &programSourceLength, &programResult);
@@ -152,8 +154,8 @@ RuntimeOpenCL::~RuntimeOpenCL() {
 }
 
 void RuntimeOpenCL::run(const float& dt) {
-  static const size_t globalWorkSize = n;
-  static const size_t localWorkSize = maxLocalSize;
+  const size_t globalWorkSize = n;
+  const size_t localWorkSize = maxLocalSize;
 
   clSetKernelArg(kernel, 0, sizeof(cl_float), &dt);
   clSetKernelArg(kernel, 2, sizeof(cl_mem), &gpuCurrentParticles);

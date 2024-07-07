@@ -9,8 +9,8 @@ class Particle {
     [[nodiscard]] const float& getMass() const;
     [[nodiscard]] const sf::VertexArray& getVertices() const;
 
-    void update(const float& dt);
-    void update(float x, float y);
+    void update(float dt);
+    void update(sf::Vector2f pos);
 
     void attract(const sf::Vector2f& attractorPos, const float& attractorMass);
 
@@ -23,8 +23,8 @@ class Particle {
     sf::VertexArray vertices{sf::Quads, 4};
 
   private:
-    void updatePosition(const float& dt);
-    void updatePosition(float x, float y);
+    void updatePosition(float dt);
+    void updatePosition(sf::Vector2f pos);
     void updatePositionVertices();
 };
 

@@ -21,35 +21,32 @@ const sf::Vector2f& Particle::getVelocity() const    { return velocity; }
 const float& Particle::getMass() const               { return mass;     }
 const sf::VertexArray& Particle::getVertices() const { return vertices; }
 
-void Particle::update(const float& dt) {
+void Particle::update(float dt) {
   updatePosition(dt);
   updatePositionVertices();
 }
 
-void Particle::update(float x, float y) {
-  updatePosition(x, y);
+void Particle::update(sf::Vector2f pos) {
+  updatePosition(pos);
   updatePositionVertices();
 }
 
 void Particle::attract(const sf::Vector2f& attractorPos, const float& attractorMass) {
-  // Constrain high acceleration at tiny distances between particles
-  constexpr float distMin = 0.1f;
-
   sf::Vector2f v = attractorPos - position;
-  float magSq = std::max(v.x * v.x + v.y * v.y, distMin);
+  float magSq = v.x * v.x + v.y * v.y;
   float mag = std::sqrt(magSq);
 
-  acceleration += attractorMass / (magSq * mag) * v;
+  acceleration += attractorMass / (magSq * mag + ZERO_DIVISION_PREVENT_VALUE) * v;
 }
 
-void Particle::updatePosition(const float& dt) {
+void Particle::updatePosition(float dt) {
   position += velocity * dt;
   velocity += acceleration * dt;
-  acceleration *= 0.f;
+  acceleration = {0.f, 0.f};
 }
 
-void Particle::updatePosition(float x, float y) {
-  position = {x, y};
+void Particle::updatePosition(sf::Vector2f pos) {
+  position = pos;
 }
 
 void Particle::updatePositionVertices() {

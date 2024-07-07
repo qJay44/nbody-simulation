@@ -11,27 +11,21 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
     [[nodiscard]] const sf::Text& getTimerText() const;
 
     void toggleGpuMode();
-    void update(const float& dt);
+    void update(float dt);
     void drawGrid(sf::RenderTarget& target, const uint8_t& limit = QUAD_TREE_MAX_DEPTH) const;
 
   private:
     const sf::Texture* texture;
+    const sf::Vector2f center{WIDTH * 0.5f, HEIGHT * 0.5f};
+
     std::vector<Particle> particles;
     sf::VertexArray vertices{sf::Quads, INITIAL_PARTICLES * 4};
-    qt::Rectangle* initBoundary = nullptr;
+    qt::Rectangle initBoundary{center.x, center.y, center.x, center.y};
     qt::Node* qt = nullptr;
     ThreadPool tp;
 
     RuntimeOpenCL* gpuCalc = nullptr;
     bool useGpu = false;
-
-    // Functions time execution in seconds
-    sf::Text timerText;
-    sf::Clock timer;
-    float t_qt;
-    float t_attraction;
-    float t_particles;
-    float t_vertices;
 
   private:
     virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const;
@@ -39,9 +33,8 @@ class ParticleSystem : public sf::Drawable, public sf::Transformable {
     void updateQuadTree();
     void updateAttraction();
     void updateAttractionThreaded(int begin, int end);
-    void updateAttractionGpu(const float& dt);
-    void updateParticles(const float& dt);
+    void updateAttractionGpu(float dt);
+    void updateParticles(float dt);
     void updateVertices();
-    void updateTimerText();
 };
 

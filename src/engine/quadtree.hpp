@@ -1,18 +1,23 @@
 #pragma once
 
-#include "Particle.hpp"
 #include <list>
 
+#include "Particle.hpp"
+
 namespace qt {
-  struct Rectangle {
-    const float x, y, w, h;
-    const float top, right, bottom, left;
+  class Rectangle {
+    friend class Node;
 
-    // Coords must point to the center of the rectangle
-    Rectangle(float x, float y, float w, float h);
+    public:
+      // Coords must point to the center of the rectangle
+      Rectangle(float x, float y, float w, float h);
 
-    bool contains(const Particle* p) const;
-    bool intersects(const Rectangle& r) const;
+      bool contains(const Particle* p) const;
+      bool intersects(const Rectangle& r) const;
+
+    private:
+      const float x, y, w, h;
+      const float top, right, bottom, left;
   };
 
   class Node {

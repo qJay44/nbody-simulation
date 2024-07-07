@@ -9,6 +9,11 @@ class RuntimeOpenCL {
     RuntimeOpenCL(const std::vector<Particle>& particles);
     ~RuntimeOpenCL();
 
+    [[nodiscard]]
+    const cl_float4* getComputedParticlesPtr() const;
+
+    void run(const float& dt);
+
   private:
     const uint32_t n;
     cl_float4* currentParticles;
@@ -26,9 +31,5 @@ class RuntimeOpenCL {
 
     cl_kernel kernel;
     cl_program program;
-
-  private:
-    void run(const float& dt);
-    const cl_float4* getComputedParticlesPtr() const;
 };
 

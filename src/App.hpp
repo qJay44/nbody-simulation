@@ -23,7 +23,6 @@ class App {
 
     ParticleSystem* particles = nullptr;
     float dt;
-    bool showTimer = false;
     bool showGrid = false;
     bool showFPS = true;
 

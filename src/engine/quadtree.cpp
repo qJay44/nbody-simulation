@@ -1,16 +1,17 @@
 // http://arborjs.org/docs/barnes-hut
 
 #include "quadtree.hpp"
+#include <cmath>
 
 using namespace qt;
 
-inline float magSq(const sf::Vector2f& v1, const sf::Vector2f& v2) {
+inline float mag(const sf::Vector2f& v1, const sf::Vector2f& v2) {
   sf::Vector2f v = v1 - v2;
-  return v.x * v.x + v.y * v.y;
+  return sqrtf(v.x * v.x + v.y * v.y);
 }
 
-inline bool isFar(float s, float dd) {
-  return (s * s) / dd < QUAD_TREE_THETA_SQ;
+inline bool isFar(float s, float d) {
+  return s / (d + ZERO_DIVISION_PREVENT_VALUE) < QUAD_TREE_THETA;
 }
 
 Rectangle::Rectangle(float x, float y, float w, float h)
@@ -87,7 +88,7 @@ void Node::solveAttraction(Particle* p1) {
 
   // 2. Otherwise, calculate the ration s/d. If s/d < θ,
   // treat this internal node as a single body, and calculate the force for the particle.
-  } else if (isFar(boundary.w * 2.f, magSq(p1->getPosition(), gravityField.center)))
+  } else if (isFar(boundary.w * 2.f, mag(p1->getPosition(), gravityField.center)))
     p1->attract(gravityField.center, gravityField.mass);
 
   // 3. Otherwise, run the procedure recursively for other nodes
@@ -121,7 +122,7 @@ void Node::updateGravityField(const sf::Vector2f& pos, const uint32_t& m2) {
   float& m1 = gravityField.mass;
   float& x = gravityField.center.x;
   float& y = gravityField.center.y;
-  float m = m1 + m2;
+  float m = m1 + m2; // This one cannot be zero, right?
 
   x = (x * m1 + pos.x * m2) / m;
   y = (y * m1 + pos.y * m2) / m;
