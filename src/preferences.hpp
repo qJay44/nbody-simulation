@@ -6,7 +6,7 @@
 #define SPIRAL_ARMS 5
 #define SPIRAL_ARMS_WIDTH 20         // Mini arms in arms
 #define SPIRAL_ARMS_WIDTH_VALUE 9. // Distance between each mini arm (pi divider)
-#define SPIRAL_ARM_TWIST_VALUE 100.  // How musch the arm is twisted (pi divider)
+#define SPIRAL_ARM_TWIST_VALUE 100.  // How much the arm is twisted (pi divider)
 #define SPIRAL_ARM_LENGTH (int)(INITIAL_PARTICLES / SPIRAL_ARMS / SPIRAL_ARMS_WIDTH)
 
 #define RADIUS 1

@@ -1,5 +1,8 @@
+#pragma once
+
 #include <fstream>
 
+[[nodiscard]]
 inline std::string readFromFile(std::string path) {
   std::string content;
   std::getline(std::ifstream(path), content, '\0');

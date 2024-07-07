@@ -1,4 +1,4 @@
-#include "ThreadPool.h"
+#include "ThreadPool.hpp"
 
 void ThreadPool::wait() {
   std::this_thread::yield();
