@@ -31,7 +31,7 @@ void Particle::update(sf::Vector2f pos) {
   updatePositionVertices();
 }
 
-void Particle::attract(const sf::Vector2f& attractorPos, const float& attractorMass) {
+void Particle::attractTo(const sf::Vector2f& attractorPos, const float& attractorMass) {
   sf::Vector2f v = attractorPos - position;
   float magSq = v.x * v.x + v.y * v.y;
   float mag = std::sqrt(magSq);

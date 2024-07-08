@@ -5,14 +5,14 @@
 
 class ParticleSystem : public sf::Drawable, public sf::Transformable {
   public:
-    ParticleSystem(const sf::Texture* texture, const sf::Font* font);
+    ParticleSystem(const sf::Texture* texture);
     ~ParticleSystem();
 
     [[nodiscard]] const sf::Text& getTimerText() const;
 
     void toggleGpuMode();
     void update(float dt);
-    void drawGrid(sf::RenderTarget& target, const uint8_t& limit = QUAD_TREE_MAX_DEPTH) const;
+    void drawGrid(sf::RenderTarget& target, const uint32_t& limit = QUAD_TREE_MAX_DEPTH) const;
 
   private:
     const sf::Texture* texture;

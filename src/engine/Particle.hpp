@@ -2,7 +2,7 @@
 
 class Particle {
   public:
-    Particle(sf::Vector2f position, float mass = INITIAL_MASS, float radius = RADIUS, sf::Color color = {30, 30, 30, 150});
+    Particle(sf::Vector2f position, float mass = INITIAL_MASS, float radius = RADIUS, sf::Color color = {30, 30, 30});
 
     [[nodiscard]] const sf::Vector2f& getPosition() const;
     [[nodiscard]] const sf::Vector2f& getVelocity() const;
@@ -12,7 +12,7 @@ class Particle {
     void update(float dt);
     void update(sf::Vector2f pos);
 
-    void attract(const sf::Vector2f& attractorPos, const float& attractorMass);
+    void attractTo(const sf::Vector2f& attractorPos, const float& attractorMass);
 
   private:
     float mass;

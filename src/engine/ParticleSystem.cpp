@@ -1,28 +1,10 @@
 #include "ParticleSystem.hpp"
+#include "Spawner.hpp"
 
-#include <cmath>
+ParticleSystem::ParticleSystem(const sf::Texture* texture) : texture(texture) {
+  Spawner::spiral(particles, center);
 
-#define PI 3.14159265359f
-
-ParticleSystem::ParticleSystem(const sf::Texture* texture, const sf::Font* font) : texture(texture) {
-  float stepRad = (2.f * PI) / SPIRAL_ARMS;
-
-  for (int i = 0; i < SPIRAL_ARMS; i++) {
-    float startRad = i * stepRad;
-    for (int j = 0; j < SPIRAL_ARMS_WIDTH; j++) {
-      float startArmRad = j * PI / SPIRAL_ARMS_WIDTH_VALUE / SPIRAL_ARMS_WIDTH;
-      for (int k = 0; k < SPIRAL_ARM_LENGTH; k++) {
-        sf::Vector2f pos = center;
-        float rad = startRad + startArmRad + k * PI / SPIRAL_ARM_TWIST_VALUE;
-        pos += {cosf(rad) * k, sinf(rad) * k};
-        particles.push_back(Particle(pos));
-      }
-    }
-  }
-
-  // Setup quad tree
   qt = new qt::Node(initBoundary);
-
   gpuCalc = new RuntimeOpenCL(particles);
 
   tp.start();
@@ -50,7 +32,7 @@ void ParticleSystem::update(float dt) {
   }
 }
 
-void ParticleSystem::drawGrid(sf::RenderTarget& target, const uint8_t& limit) const {
+void ParticleSystem::drawGrid(sf::RenderTarget& target, const uint32_t& limit) const {
   qt->show(target, limit);
 }
 
@@ -64,7 +46,7 @@ void ParticleSystem::draw(sf::RenderTarget& target, sf::RenderStates states) con
 
 void ParticleSystem::updateQuadTree() {
   delete qt; qt = new qt::Node(initBoundary);
-  for (const Particle& particle : particles)
+  for (Particle& particle : particles)
     qt->insert(&particle);
 }
 

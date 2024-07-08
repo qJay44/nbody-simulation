@@ -1,8 +1,7 @@
 #pragma once
 
-#include <list>
-
 #include "Particle.hpp"
+#include <list>
 
 namespace qt {
   class Rectangle {
@@ -16,31 +15,37 @@ namespace qt {
       bool intersects(const Rectangle& r) const;
 
     private:
-      const float x, y, w, h;
+      const float x, y, w, h; // The width and height are distances from the center to the edges
       const float top, right, bottom, left;
   };
 
   class Node {
     public:
-      Node(Rectangle boundary, uint8_t depth = 0);
+      Node(Rectangle boundary, uint32_t depth = 0);
       ~Node();
+
+      static void printMaxReachedDepth();
 
       bool insert(const Particle* p);
 
       void solveAttraction(Particle* p1);
-      void show(sf::RenderTarget& target, const uint8_t& limit);
+
+      // The deeper Quadtree the more time to draw the grid
+      void show(sf::RenderTarget& target, const uint32_t& depthLimit);
 
     private:
-      struct GravityField {
+      static uint32_t maxDepth;
+
+      struct Gravity {
         sf::Vector2f center;
         float mass;
+        void update(const sf::Vector2f& pos, const float& m2);
       };
 
-      GravityField gravityField;
+      std::list<const Particle*> container;
+      Gravity gravity;
       Rectangle boundary;
-      std::list<const Particle*> particles;
-      uint8_t depth;
-      bool divided = false;
+      uint32_t depth;
 
       Node* northWest = nullptr;
       Node* northEast = nullptr;
@@ -48,8 +53,7 @@ namespace qt {
       Node* southEast = nullptr;
 
     private:
-      void updateGravityField(const sf::Vector2f& pos, const uint32_t& m2);
-      void subdivide();
+      void subdivide(const Particle* p);
   };
 }
 

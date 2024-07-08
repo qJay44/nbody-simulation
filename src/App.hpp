@@ -4,9 +4,9 @@
 
 class App {
   public:
+    App();
     ~App();
 
-    void setup();
     void run();
 
   private:

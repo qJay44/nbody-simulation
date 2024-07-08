@@ -119,7 +119,7 @@ RuntimeOpenCL::RuntimeOpenCL(const std::vector<Particle>& particles) : n(particl
   assert(cpuCopyResult2 == CL_SUCCESS);
 
   cl_int programResult;
-  std::string clFile = readFromFile("res/cl/particle-attraction.cl");
+  std::string clFile = readFromFile("res/kernels/particle-attraction.cl");
   const char* programSource = clFile.c_str();
   size_t programSourceLength = 0;
   program = clCreateProgramWithSource(context, 1, &programSource, &programSourceLength, &programResult);

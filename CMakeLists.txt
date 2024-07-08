@@ -1,5 +1,6 @@
 include(./.env.cmake OPTIONAL RESULT_VARIABLE LOCAL_ENV)
 message(STATUS "Local .env.cmake: ${LOCAL_ENV}")
+message(STATUS "Build type: " ${CMAKE_BUILD_TYPE})
 
 cmake_minimum_required(VERSION 3.10)
 
@@ -13,7 +14,7 @@ project(MyProject VERSION 1.0)
 
 file(GLOB_RECURSE SOURCES ${PROJECT_SOURCE_DIR}/src/*.cpp)
 add_executable(${PROJECT_NAME} ${SOURCES})
-set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/run)
+set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/Run)
 
 target_precompile_headers(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/src/pch.hpp)
 
@@ -22,5 +23,11 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${OPENCL_PATH}/include)
 
 target_link_directories(${PROJECT_NAME} PUBLIC ${SFML_PATH}/lib)
 target_link_directories(${PROJECT_NAME} PUBLIC ${OPENCL_PATH}/lib/x86_64)
-target_link_libraries(${PROJECT_NAME} sfml-system sfml-window sfml-graphics OpenCL)
+
+
+if (${CMAKE_BUILD_TYPE} STREQUAL "Release")
+  target_link_libraries(${PROJECT_NAME} sfml-system sfml-window sfml-graphics OpenCL)
+else()
+  target_link_libraries(${PROJECT_NAME} sfml-system-d sfml-window-d sfml-graphics-d OpenCL)
+endif()
 

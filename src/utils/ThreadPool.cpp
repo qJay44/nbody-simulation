@@ -6,8 +6,6 @@ void ThreadPool::wait() {
 
 void ThreadPool::threadLoop() {
   while (true) {
-    if (remainingTasks > 0) wait();
-
     std::function<void()> job;
     {
       std::unique_lock<std::mutex> lock(queueMutex);
@@ -30,8 +28,8 @@ void ThreadPool::start() {
     threads.emplace_back(std::thread(&ThreadPool::threadLoop, this));
 }
 
-void ThreadPool::start(uint32_t restriction = 1) {
-  const uint32_t numThreads = std::min(restriction, std::thread::hardware_concurrency());
+void ThreadPool::start(uint32_t limit) {
+  const uint32_t numThreads = std::min(limit, std::thread::hardware_concurrency());
   for (uint32_t ii = 0; ii < numThreads; ++ii)
     threads.emplace_back(std::thread(&ThreadPool::threadLoop, this));
 }

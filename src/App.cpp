@@ -1,10 +1,6 @@
 #include "App.hpp"
 
-App::~App() {
-  if (particles) delete particles;
-}
-
-void App::setup() {
+App::App() {
   // Window
   window.create(sf::VideoMode(WIDTH, HEIGHT), "NBody simulation", sf::Style::Close);
   window.setFramerateLimit(90);
@@ -25,7 +21,7 @@ void App::setup() {
   backgroundSprite.setTexture(backgroundTexture.getTexture());
 
   // Load circle texture
-  circleTexture.loadFromFile("res/circle.png");
+  circleTexture.loadFromFile("res/img/circle.png");
   circleTexture.generateMipmap();
   circleTexture.setSmooth(true);
 
@@ -33,7 +29,11 @@ void App::setup() {
   shader.setUniform("texture", backgroundTexture.getTexture());
   shader.setUniformArray("colormap", colormaps::inferno, 256);
 
-  particles = new ParticleSystem(&circleTexture, &genericFont);
+  particles = new ParticleSystem(&circleTexture);
+}
+
+App::~App() {
+  if (particles) delete particles;
 }
 
 void App::run() {
@@ -52,13 +52,16 @@ void App::run() {
             showGrid = !showGrid;
             break;
           case sf::Keyboard::Key::R:
-            delete particles; particles = new ParticleSystem(&circleTexture, &genericFont);
+            delete particles; particles = new ParticleSystem(&circleTexture);
             break;
           case sf::Keyboard::Key::F:
             showFPS = !showFPS;
             break;
           case sf::Keyboard::Key::A:
             particles->toggleGpuMode();
+            break;
+          case sf::Keyboard::Key::P:
+            qt::Node::printMaxReachedDepth();
             break;
           default:
             break;
